@@ -16,6 +16,16 @@ def nCk(n, k):
 
 EventState = namedtuple('EventState', 'orb_count dry_streak targets_pulled')
 SessionState = namedtuple('SessionState', 'prob_level stone_counts')
+
+
+class StateStruct(namedtuple('_', 'event session')):
+    def _obj_func(self):
+        return (self.event.orb_count, -self.session.stone_counts.sum())
+
+    def __lt__(self, other):
+        return self._obj_func() < other._obj_func()
+
+
 ResultState = namedtuple('ResultState', 'orb_count targets_pulled')
 
 
@@ -50,13 +60,16 @@ class PoolProbsCalculator:
                 .sum())
 
 
-stone_combos = [pd.Series((i, j, k, summons_per_session-i-j-k), index=Colors)
-                for i in range(summons_per_session+1)
-                for j in range(summons_per_session+1-i)
-                for k in range(summons_per_session+1-i-j)]
-
 def stone_combinations():
-    return (i for i in stone_combos)
+    return (i for i in stone_combinations.cache)
+
+
+stone_combinations.cache = [
+    pd.Series((i, j, k, summons_per_session-i-j-k), index=Colors)
+    for i in range(summons_per_session+1)
+    for j in range(summons_per_session+1-i)
+    for k in range(summons_per_session+1-i-j)
+]
 
 
 def stone_combo_prob(stone_counts, color_probs):

@@ -3,22 +3,16 @@ from .core_utils import *
 from .pd_sf_convert import *
 from .summon_behaviors import *
 
-
-from collections import defaultdict, OrderedDict
+from collections import defaultdict
 from fractions import Fraction
 
 import pandas as pd
+import sortedcontainers as sc
 
 
-class OrderedDefaultDict(OrderedDict):
-    def __init__(self, default_factory=(lambda: None), items=()):
-        super().__init__(items)
-        self.default_factory = default_factory
-
-    def __getitem__(self, key):
-        if key not in self:
-            self[key] = self.default_factory()
-        return super().__getitem__(key)
+class DefaultSortedDict(sc.SortedDict):
+    def __missing__(self, key):
+        return Fraction()
 
 
 def get_outcomes(no_of_orbs, summon_behavior):
@@ -50,7 +44,7 @@ def get_outcomes(no_of_orbs, summon_behavior):
         (StarPools._5_STAR_FOCUS, Colors.RED, 1),
     ], columns=['star', 'color', 'count'], index=['star', 'color'])['count']
 
-    states = OrderedDefaultDict(Fraction, [])
+    states = DefaultSortedDict()
     outcomes = defaultdict(Fraction, [])
 
     ppcalc = PoolProbsCalculator(pool_counts)
@@ -61,9 +55,10 @@ def get_outcomes(no_of_orbs, summon_behavior):
         color_probs = ppcalc.colorpool(prob_tier)
 
         for stones in stone_combinations():
-            states[sf_ify(event_state), sf_ify(SessionState(prob_tier, stones))] += (
-                probability * stone_combo_prob(stones, color_probs)
-            )
+            states[StateStruct(
+                sf_ify(event_state),
+                sf_ify(SessionState(prob_tier, stones))
+            )] += probability * stone_combo_prob(stones, color_probs)
 
     def branch_event(event, session, prob, stone_choice):
         new_session = session._replace(stone_counts=session.stone_counts.sub(
@@ -92,32 +87,38 @@ def get_outcomes(no_of_orbs, summon_behavior):
 
             new_event = EventState(orb_count, dry_streak, targets_pulled)
 
-            states[sf_ify(new_event), sf_ify(new_session)] += total_prob
+            states[StateStruct(
+                sf_ify(new_event),
+                sf_ify(new_session)
+            )] += total_prob
 
-    def push_outcome(event, prob):
+    def push_outcome(event, probability):
         result = ResultState(event.orb_count, event.targets_pulled)
-        outcomes[sf_ify(result)] += prob
+        outcomes[sf_ify(result)] += probability
 
     init_new_session(EventState(no_of_orbs, 0, 0*target_pool_counts),
                      Fraction(1))
 
     while states:
-        (event, session), prob = states.popitem(last=False)
+        print("\tno. of states:", len(states))
+
+        (event, session), prob = states.popitem(-1)
         event = pd_ify(event)
         session = pd_ify(session)
+        print('\torbs left:', event.orb_count)
 
         if not stone_chooser.should_continue(event.targets_pulled):
-            # print('chose to stop summoning')
+            print('chose to stop summoning')
             push_outcome(event, prob)
             continue
 
         if session.stone_counts.sum() == 0:
-            # print('completed summon session')
+            print('completed summon session')
             init_new_session(event, prob)
             continue
 
         if event.orb_count < stone_cost(session.stone_counts.sum()):
-            # print('out of orbs')
+            print('out of orbs')
             push_outcome(event, prob)
             continue
 
@@ -128,13 +129,13 @@ def get_outcomes(no_of_orbs, summon_behavior):
             if session.stone_counts.sum() == summons_per_session:
                 raise SummonChoiceError('cannot quit session without summoning'
                                         ' at least one Hero')
-            # print('quit summon session')
+            print('quit summon session')
             init_new_session(event, prob)
         else:
             if session.stone_counts[stone_choice] == 0:
                 raise SummonChoiceError('cannot summon colors that are not'
                                         ' present')
-            # print('chose to summon', stone_choice.name)
+            print('chose to summon', stone_choice.name)
             branch_event(event, session, prob, stone_choice)
 
     return outcomes
@@ -146,7 +147,7 @@ def format_results(results):
 
 
 def run():
-    outcome_probs = get_outcomes(no_of_orbs=7,
+    outcome_probs = get_outcomes(no_of_orbs=10,
                                  summon_behavior=ColorHunt)
     for state, prob in outcome_probs.items():
         print("{}: {:%}".format(state, float(prob)))
