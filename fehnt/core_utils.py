@@ -2,6 +2,7 @@ from fehnt.core_defs import *
 
 from collections import namedtuple
 from fractions import Fraction
+from functools import lru_cache
 
 # TODO use static_frame instead
 import pandas as pd
@@ -37,6 +38,7 @@ class PoolProbsCalculator:
             if starpool_counts is None else starpool_counts
         )
 
+    @lru_cache(maxsize=None)
     def starpool(self, probability_tier=0):
         i = probability_tier
         return pd.DataFrame.from_records([
@@ -48,12 +50,14 @@ class PoolProbsCalculator:
                                  * Fraction(200-(12+i), 200-12))),
         ], columns=['star', 'probability']).set_index('star')['probability']
 
+    @lru_cache(maxsize=None)
     def pool(self, probability_tier=0):
         return self.pool_counts.mul(
             self.starpool(probability_tier) / self.starpool_counts,
             level='star'
         )
 
+    @lru_cache(maxsize=None)
     def colorpool(self, probability_tier=0):
         return (self.pool(probability_tier)
                 .groupby(level='color', sort=False)
@@ -61,15 +65,15 @@ class PoolProbsCalculator:
 
 
 def stone_combinations():
-    return (i for i in stone_combinations.cache)
+    return (s for _, s in stone_combinations.cache.iterrows())
 
 
-stone_combinations.cache = [
-    pd.Series((i, j, k, summons_per_session-i-j-k), index=Colors)
+stone_combinations.cache = pd.DataFrame.from_records([
+    (i, j, k, summons_per_session-i-j-k)
     for i in range(summons_per_session+1)
     for j in range(summons_per_session+1-i)
     for k in range(summons_per_session+1-i-j)
-]
+], columns=Colors)
 
 
 def stone_combo_prob(stone_counts, color_probs):
