@@ -64,8 +64,19 @@ class PoolProbsCalculator:
                 .sum())
 
 
-def stone_combinations():
-    return (s for _, s in stone_combinations.cache.iterrows())
+def stone_combo_prob(stone_counts, color_probs):
+    no_summons = stone_counts.sum()
+    stones_remaining = no_summons - (stone_counts.cumsum()-stone_counts)
+
+    return (color_probs[stone_counts.index] ** stone_counts
+            * stones_remaining.combine(stone_counts, nCk)
+            ).prod()
+
+
+# @lru_cache(maxsize=None)
+def stone_combinations(color_probs):
+    return ((s, stone_combo_prob(s, color_probs))
+            for _, s in stone_combinations.cache.iterrows())
 
 
 stone_combinations.cache = pd.DataFrame.from_records([
@@ -76,10 +87,3 @@ stone_combinations.cache = pd.DataFrame.from_records([
 ], columns=Colors)
 
 
-def stone_combo_prob(stone_counts, color_probs):
-    no_summons = stone_counts.sum()
-    stones_remaining = no_summons - (stone_counts.cumsum()-stone_counts)
-
-    return (color_probs[stone_counts.index] ** stone_counts
-            * stones_remaining.combine(stone_counts, nCk)
-            ).prod()

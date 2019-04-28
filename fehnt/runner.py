@@ -50,15 +50,15 @@ def get_outcomes(no_of_orbs, summon_behavior):
     ppcalc = PoolProbsCalculator(pool_counts)
     stone_chooser = summon_behavior(target_pool_counts)
 
-    def init_new_session(event_state, probability):
-        prob_tier = event_state.dry_streak // summons_per_session
+    def init_new_session(event, probability):
+        prob_tier = event.dry_streak // summons_per_session
         color_probs = ppcalc.colorpool(prob_tier)
 
-        for stones in stone_combinations():
+        for stones, stones_prob in stone_combinations(color_probs):
             states[StateStruct(
-                sf_ify(event_state),
+                sf_ify(event),
                 sf_ify(SessionState(prob_tier, stones))
-            )] += probability * stone_combo_prob(stones, color_probs)
+            )] += probability * stones_prob
 
     def branch_event(event, session, prob, stone_choice):
         new_session = session._replace(stone_counts=session.stone_counts.sub(
