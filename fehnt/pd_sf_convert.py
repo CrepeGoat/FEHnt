@@ -8,6 +8,12 @@ class Series(sf.Series):
             (tuple(self.index), tuple(self.values))
         )
 
+    def __eq__(self, other):
+        return (
+            len(self) == len(other)
+            and (self.values == other.values).all()
+            and (self.index.values == other.index.values).all()
+        )
 
 def pd_ify(ntuple):
     return ntuple._replace(**{k: v.to_pandas()
