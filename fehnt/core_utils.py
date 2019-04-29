@@ -30,6 +30,7 @@ class StateStruct(namedtuple('_', 'event session')):
 ResultState = namedtuple('ResultState', 'orb_count targets_pulled')
 
 
+# for standard summoning events
 class PoolProbsCalculator:
     def __init__(self, pool_counts, starpool_counts=None):
         self.pool_counts = pool_counts
@@ -85,5 +86,3 @@ stone_combinations.cache = pd.DataFrame.from_records([
     for j in range(summons_per_session+1-i)
     for k in range(summons_per_session+1-i-j)
 ], columns=Colors)
-
-

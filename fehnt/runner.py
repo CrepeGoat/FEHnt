@@ -15,35 +15,7 @@ class DefaultSortedDict(sc.SortedDict):
         return Fraction()
 
 
-def get_outcomes(no_of_orbs, summon_behavior):
-    # Inputs (hard-coded for now)
-    # (based on Heroes of Gallia summoning event)
-    pool_counts = pd.DataFrame.from_records([
-        (StarPools._5_STAR_FOCUS, Colors.RED, 1),
-        (StarPools._5_STAR_FOCUS, Colors.BLUE, 1),
-        (StarPools._5_STAR_FOCUS, Colors.GREEN, 1),
-        (StarPools._5_STAR_FOCUS, Colors.GRAY, 1),
-
-        (StarPools._5_STAR, Colors.RED, 19),
-        (StarPools._5_STAR, Colors.BLUE, 15),
-        (StarPools._5_STAR, Colors.GREEN, 15),
-        (StarPools._5_STAR, Colors.GRAY, 8),
-
-        (StarPools._4_STAR, Colors.RED, 32),
-        (StarPools._4_STAR, Colors.BLUE, 30),
-        (StarPools._4_STAR, Colors.GREEN, 20),
-        (StarPools._4_STAR, Colors.GRAY, 28),
-
-        (StarPools._3_STAR, Colors.RED, 32),
-        (StarPools._3_STAR, Colors.BLUE, 29),
-        (StarPools._3_STAR, Colors.GREEN, 19),
-        (StarPools._3_STAR, Colors.GRAY, 28),
-    ], columns=['star', 'color', 'count'], index=['star', 'color'])['count']
-
-    target_pool_counts = pd.DataFrame.from_records([
-        (StarPools._5_STAR_FOCUS, Colors.RED, 1),
-    ], columns=['star', 'color', 'count'], index=['star', 'color'])['count']
-
+def get_outcomes(pool_counts, target_pool_counts, no_of_orbs, summon_behavior):
     states = DefaultSortedDict()
     outcomes = defaultdict(Fraction, [])
 
@@ -149,7 +121,35 @@ def format_results(results):
 
 
 def run():
-    outcome_probs = get_outcomes(no_of_orbs=10,
+    # (based on Heroes of Gallia summoning event)
+    pool_counts = pd.DataFrame.from_records([
+        (StarPools._5_STAR_FOCUS, Colors.RED, 1),
+        (StarPools._5_STAR_FOCUS, Colors.BLUE, 1),
+        (StarPools._5_STAR_FOCUS, Colors.GREEN, 1),
+        (StarPools._5_STAR_FOCUS, Colors.GRAY, 1),
+
+        (StarPools._5_STAR, Colors.RED, 19),
+        (StarPools._5_STAR, Colors.BLUE, 15),
+        (StarPools._5_STAR, Colors.GREEN, 15),
+        (StarPools._5_STAR, Colors.GRAY, 8),
+
+        (StarPools._4_STAR, Colors.RED, 32),
+        (StarPools._4_STAR, Colors.BLUE, 30),
+        (StarPools._4_STAR, Colors.GREEN, 20),
+        (StarPools._4_STAR, Colors.GRAY, 28),
+
+        (StarPools._3_STAR, Colors.RED, 32),
+        (StarPools._3_STAR, Colors.BLUE, 29),
+        (StarPools._3_STAR, Colors.GREEN, 19),
+        (StarPools._3_STAR, Colors.GRAY, 28),
+    ], columns=['star', 'color', 'count'], index=['star', 'color'])['count']
+
+    target_pool_counts = pd.DataFrame.from_records([
+        (StarPools._5_STAR_FOCUS, Colors.RED, 1),
+    ], columns=['star', 'color', 'count'], index=['star', 'color'])['count']
+
+    outcome_probs = get_outcomes(pool_counts, target_pool_counts,
+                                 no_of_orbs=10,
                                  summon_behavior=ColorHunt)
     for state, prob in outcome_probs.items():
         print("{}: {:%}".format(state, float(prob)))

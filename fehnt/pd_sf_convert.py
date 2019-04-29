@@ -4,9 +4,7 @@ import static_frame as sf
 
 class HashableSeries(sf.Series):
     def __hash__(self):
-        return hash(
-            (tuple(self.index), tuple(self.values))
-        )
+        return hash(tuple(self.iter_element_items()))
 
     def __eq__(self, other):
         return (
