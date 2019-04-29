@@ -2,7 +2,7 @@ import pandas as pd
 import static_frame as sf
 
 
-class Series(sf.Series):
+class HashableSeries(sf.Series):
     def __hash__(self):
         return hash(
             (tuple(self.index), tuple(self.values))
@@ -22,6 +22,6 @@ def pd_ify(ntuple):
 
 
 def sf_ify(ntuple):
-    return ntuple._replace(**{k: Series.from_pandas(v, own_data=True)
+    return ntuple._replace(**{k: HashableSeries.from_pandas(v, own_data=True)
                               for k, v in ntuple._asdict().items()
                               if isinstance(v, pd.Series)})

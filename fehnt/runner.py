@@ -61,9 +61,11 @@ def get_outcomes(no_of_orbs, summon_behavior):
             )] += probability * stones_prob
 
     def branch_event(event, session, prob, stone_choice):
-        new_session = session._replace(stone_counts=session.stone_counts.sub(
-            pd.Series([1], index=[stone_choice]), fill_value=0
-        ))
+        new_session = session._replace(
+            stone_counts=session.stone_counts.sub(
+                pd.Series([1], index=[stone_choice]), fill_value=0
+            )
+        )
         orb_count = event.orb_count - stone_cost(session.stone_counts.sum())
 
         choice_starpool_probs = (ppcalc
