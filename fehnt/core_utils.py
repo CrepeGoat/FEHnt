@@ -30,41 +30,6 @@ class StateStruct(namedtuple('_', 'event session')):
 ResultState = namedtuple('ResultState', 'orb_count targets_pulled')
 
 
-# for standard summoning events
-class PoolProbsCalculator:
-    def __init__(self, pool_counts, starpool_counts=None):
-        self.pool_counts = pool_counts
-        self.starpool_counts = (
-            pool_counts.groupby(level='star', sort=False).sum()
-            if starpool_counts is None else starpool_counts
-        )
-
-    @lru_cache(maxsize=None)
-    def starpool(self, probability_tier=0):
-        i = probability_tier
-        return pd.DataFrame.from_records([
-            (StarPools._5_STAR_FOCUS, Fraction(12+i, 400)),
-            (StarPools._5_STAR, Fraction(12+i, 400)),
-            (StarPools._4_STAR, (Fraction(58, 100)
-                                 * Fraction(200-(12+i), 200-12))),
-            (StarPools._3_STAR, (Fraction(36, 100)
-                                 * Fraction(200-(12+i), 200-12))),
-        ], columns=['star', 'probability']).set_index('star')['probability']
-
-    @lru_cache(maxsize=None)
-    def pool(self, probability_tier=0):
-        return self.pool_counts.mul(
-            self.starpool(probability_tier) / self.starpool_counts,
-            level='star'
-        )
-
-    @lru_cache(maxsize=None)
-    def colorpool(self, probability_tier=0):
-        return (self.pool(probability_tier)
-                .groupby(level='color', sort=False)
-                .sum())
-
-
 def stone_combo_prob(stone_counts, color_probs):
     no_summons = stone_counts.sum()
     stones_remaining = no_summons - (stone_counts.cumsum()-stone_counts)

@@ -5,7 +5,7 @@ class SummonChoiceError(RuntimeError):
     pass
 
 
-class SummonChooser:
+class SummonerBehavior:
     def __init__(self, target_pool_counts):
         self.targets = target_pool_counts
 
@@ -15,14 +15,11 @@ class SummonChooser:
 
     def choose_stone(self, targets_pulled, stone_counts, unit_probs):
         # Default impementation. Should be overridden.
-        for color, count in stone_counts.iteritems():
-            if count:
-                return color
-        else:
-            return None
+        return next((color for color, count in stone_counts.iteritems()
+                     if count), None)
 
 
-class BlindFullSummon(SummonChooser):
+class BlindFullSummoner(SummonerBehavior):
     def should_continue(self, targets_pulled):
         # TODO make more sophisticated stone-choosing functions
         return self.targets.sub(targets_pulled, fill_value=0).any()
@@ -32,7 +29,7 @@ class BlindFullSummon(SummonChooser):
         return super().choose_stone(targets_pulled, stone_counts, unit_probs)
 
 
-class ColorHunt(SummonChooser):
+class ColorHuntSummoner(SummonerBehavior):
     def should_continue(self, targets_pulled):
         # TODO make more sophisticated stone-choosing functions
         return self.targets.sub(targets_pulled, fill_value=0).any()

@@ -1,7 +1,8 @@
 from .core_defs import *
 from .core_utils import *
 from .pd_sf_convert import *
-from .summon_behaviors import *
+from .event_behaviors import *
+from .summoner_behaviors import *
 
 from collections import defaultdict
 from fractions import Fraction
@@ -15,16 +16,13 @@ class DefaultSortedDict(sc.SortedDict):
         return Fraction()
 
 
-def get_outcomes(pool_counts, target_pool_counts, no_of_orbs, summon_behavior):
+def get_outcomes(event_details, summoner, no_of_orbs):
     states = DefaultSortedDict()
     outcomes = defaultdict(Fraction, [])
 
-    ppcalc = PoolProbsCalculator(pool_counts)
-    stone_chooser = summon_behavior(target_pool_counts)
-
     def init_new_session(event, probability):
         prob_tier = event.dry_streak // summons_per_session
-        color_probs = ppcalc.colorpool(prob_tier)
+        color_probs = event_details.colorpool_probs(prob_tier)
 
         for stones, stones_prob in stone_combinations(color_probs):
             states[StateStruct(
@@ -40,8 +38,8 @@ def get_outcomes(pool_counts, target_pool_counts, no_of_orbs, summon_behavior):
         )
         orb_count = event.orb_count - stone_cost(session.stone_counts.sum())
 
-        choice_starpool_probs = (ppcalc
-                                 .pool(session.prob_level)
+        choice_starpool_probs = (event_details
+                                 .pool_probs(session.prob_level)
                                  .xs(stone_choice, level='color'))
         choice_starpool_probs /= choice_starpool_probs.sum()
 
@@ -53,7 +51,7 @@ def get_outcomes(pool_counts, target_pool_counts, no_of_orbs, summon_behavior):
             else:
                 dry_streak = event.dry_streak + 1
 
-            if (starpool, stone_choice) in target_pool_counts.index:
+            if (starpool, stone_choice) in summoner.targets.index:
                 targets_pulled = event.targets_pulled.copy()
                 targets_pulled[starpool, stone_choice] += 1
             else:
@@ -70,7 +68,7 @@ def get_outcomes(pool_counts, target_pool_counts, no_of_orbs, summon_behavior):
         result = ResultState(event.orb_count, event.targets_pulled)
         outcomes[sf_ify(result)] += probability
 
-    init_new_session(EventState(no_of_orbs, 0, 0*target_pool_counts),
+    init_new_session(EventState(no_of_orbs, 0, 0*summoner.targets),
                      Fraction(1))
 
     while states:
@@ -81,7 +79,7 @@ def get_outcomes(pool_counts, target_pool_counts, no_of_orbs, summon_behavior):
         session = pd_ify(session)
         print('\torbs left:', event.orb_count)
 
-        if not stone_chooser.should_continue(event.targets_pulled):
+        if not summoner.should_continue(event.targets_pulled):
             print('chose to stop summoning')
             push_outcome(event, prob)
             continue
@@ -96,9 +94,11 @@ def get_outcomes(pool_counts, target_pool_counts, no_of_orbs, summon_behavior):
             push_outcome(event, prob)
             continue
 
-        stone_choice = stone_chooser.choose_stone(event.targets_pulled,
-                                                  session.stone_counts,
-                                                  ppcalc.pool() / pool_counts)
+        stone_choice = summoner.choose_stone(
+            event.targets_pulled,
+            session.stone_counts,
+            event_details.pool_probs() / event_details.pool_counts
+        )
         if stone_choice is None:
             if session.stone_counts.sum() == summons_per_session:
                 raise SummonChoiceError('cannot quit session without summoning'
@@ -148,8 +148,10 @@ def run():
         (StarPools._5_STAR_FOCUS, Colors.RED, 1),
     ], columns=['star', 'color', 'count'], index=['star', 'color'])['count']
 
-    outcome_probs = get_outcomes(pool_counts, target_pool_counts,
-                                 no_of_orbs=10,
-                                 summon_behavior=ColorHunt)
+    outcome_probs = get_outcomes(
+        event_details=StandardEventDetails(pool_counts),
+        summoner=ColorHuntSummoner(target_pool_counts),
+        no_of_orbs=10
+    )
     for state, prob in outcome_probs.items():
         print("{}: {:%}".format(state, float(prob)))
