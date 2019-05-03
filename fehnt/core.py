@@ -51,18 +51,28 @@ def get_outcomes(event_details, summoner, no_of_orbs):
             else:
                 dry_streak = event.dry_streak + 1
 
-            if (starpool, stone_choice) in summoner.targets.index:
-                targets_pulled = event.targets_pulled.copy()
-                targets_pulled[starpool, stone_choice] += 1
+            if (starpool, stone_choice) not in summoner.targets.index:
+                pulls = ((event.targets_pulled, 1),)
             else:
-                targets_pulled = event.targets_pulled
+                targets_pulled_success = event.targets_pulled.copy()
+                targets_pulled_success[starpool, stone_choice] += 1
+                prob_success = Fraction(
+                    int(summoner.targets[starpool, stone_choice]),
+                    int(event_details.pool_counts[starpool, stone_choice])
+                )
 
-            new_event = EventState(orb_count, dry_streak, targets_pulled)
+                pulls = (
+                    (targets_pulled_success, prob_success),
+                    (event.targets_pulled, 1-prob_success)
+                )
 
-            states[StateStruct(
-                sf_ify(new_event),
-                sf_ify(new_session)
-            )] += total_prob
+            for targets_pulled, subsubprob in pulls:
+                new_event = EventState(orb_count, dry_streak, targets_pulled)
+
+                states[StateStruct(
+                    sf_ify(new_event),
+                    sf_ify(new_session)
+                )] += total_prob * subsubprob
 
     def push_outcome(event, probability):
         result = ResultState(event.orb_count, event.targets_pulled)
