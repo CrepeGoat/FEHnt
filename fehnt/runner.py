@@ -117,7 +117,11 @@ def get_outcomes(event_details, summoner, no_of_orbs):
 
 def format_results(results):
     # TODO
-    pass
+    yield_probs = defaultdict(Fraction, [])
+    for state, prob in results.items():
+        yield_probs[state.targets_pulled] += prob
+
+    return [(k, float(v)) for k, v in yield_probs.items()]
 
 
 def run():
@@ -153,5 +157,5 @@ def run():
         summoner=ColorHuntSummoner(target_pool_counts),
         no_of_orbs=10
     )
-    for state, prob in outcome_probs.items():
+    for state, prob in format_results(outcome_probs):
         print("{}: {:%}".format(state, float(prob)))
