@@ -3,6 +3,7 @@ from fehnt.core_defs import *
 from collections import namedtuple
 from fractions import Fraction
 from functools import lru_cache
+from itertools import chain
 
 # TODO use static_frame instead
 import numpy as np
@@ -10,14 +11,11 @@ import static_frame as sf
 import pandas as pd
 
 
-def nCk(n, k):
+def nCkarray(n, k_array):
     result = 1
-    for i in range(k):
-        result = (result * (n-i)) // (i+1)
+    for i, j in enumerate(chain(*(range(k) for k in k_array))):
+        result = (result * (n-i)) // (j+1)
     return result
-
-
-np_nCk = np.frompyfunc(nCk, 2, 1)
 
 
 EventState = namedtuple('EventState', 'orb_count dry_streak targets_pulled')
@@ -39,9 +37,8 @@ def stone_combo_prob(stone_counts, color_probs):
     no_summons = stone_counts.sum()
     stones_remaining = no_summons - (stone_counts.cumsum()-stone_counts)
 
-    return (color_probs[stone_counts.index] ** stone_counts
-            * np_nCk(stones_remaining.values, stone_counts.values)
-            ).prod()
+    return (nCkarray(no_summons, stone_counts.values)
+            * (color_probs[stone_counts.index] ** stone_counts).prod())
 
 
 # @lru_cache(maxsize=None)
