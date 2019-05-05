@@ -7,13 +7,6 @@ from functools import lru_cache
 import pandas as pd
 
 
-def nCk(n, k):
-    result = 1
-    for i in range(k):
-        result = (result * (n-i)) // (i+1)
-    return result
-
-
 class EventDetailsBase:
     def __init__(self, pool_counts, starpool_counts=None):
         self.pool_counts = pool_counts
