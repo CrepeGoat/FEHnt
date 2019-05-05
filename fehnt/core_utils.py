@@ -5,6 +5,8 @@ from fractions import Fraction
 from functools import lru_cache
 
 # TODO use static_frame instead
+import numpy as np
+import static_frame as sf
 import pandas as pd
 
 
@@ -13,6 +15,9 @@ def nCk(n, k):
     for i in range(k):
         result = (result * (n-i)) // (i+1)
     return result
+
+
+np_nCk = np.frompyfunc(nCk, 2, 1)
 
 
 EventState = namedtuple('EventState', 'orb_count dry_streak targets_pulled')
@@ -35,7 +40,7 @@ def stone_combo_prob(stone_counts, color_probs):
     stones_remaining = no_summons - (stone_counts.cumsum()-stone_counts)
 
     return (color_probs[stone_counts.index] ** stone_counts
-            * stones_remaining.combine(stone_counts, nCk)
+            * np_nCk(stones_remaining.values, stone_counts.values)
             ).prod()
 
 
