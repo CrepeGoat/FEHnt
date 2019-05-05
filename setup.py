@@ -11,6 +11,6 @@ setup(
     # Contents
     packages=['fehnt'],
     # Dependencies
-    install_requires='pandas static_frame sortedcontainers'.split(),
+    install_requires=['pandas', 'sortedcontainers', 'static_frame==0.3.1'],
     #tests_requires=['pytest'],
 )
