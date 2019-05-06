@@ -25,8 +25,11 @@ class StarPools(enum.Enum):
     _3_STAR = 3
 
 
+stone_costs = (None, 3, 4, 4, 4, 5)
+
+
 def stone_cost(stones_left):
-    return {5: 5, 4: 4, 3: 4, 2: 4, 1: 3}[stones_left]
+    return stone_costs[int(stones_left)]  # TODO fix implicit cast to float
 
 
 summons_per_session = 5
