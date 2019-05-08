@@ -7,7 +7,6 @@ from itertools import chain
 
 # TODO use static_frame instead
 import numpy as np
-import static_frame as sf
 import pandas as pd
 
 
@@ -35,7 +34,6 @@ ResultState = namedtuple('ResultState', 'orb_count targets_pulled')
 
 def stone_combo_prob(stone_counts, color_probs):
     no_summons = stone_counts.sum()
-    stones_remaining = no_summons - (stone_counts.cumsum()-stone_counts)
 
     return (nCkarray(no_summons, stone_counts.values)
             * (color_probs[stone_counts.index] ** stone_counts).prod())
