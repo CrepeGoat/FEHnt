@@ -30,18 +30,18 @@ class StateStruct(namedtuple('_', 'event session')):
 ResultState = namedtuple('ResultState', 'orb_count targets_pulled')
 
 
-def stone_combo_prob(stone_counts, color_probs):
-    no_summons = stone_counts.sum()
-    stones_remaining = no_summons - (stone_counts.cumsum()-stone_counts)
+def n_nomial_prob(counts, probs):
+    total_count = counts.sum()
+    remaining_counts = total_count - (counts.cumsum()-counts)
 
-    return (color_probs[stone_counts.index] ** stone_counts
-            * stones_remaining.combine(stone_counts, nCk)
+    return (probs[counts.index] ** counts
+            * remaining_counts.combine(counts, nCk)
             ).prod()
 
 
 # @lru_cache(maxsize=None)
 def stone_combinations(color_probs):
-    return ((s, stone_combo_prob(s, color_probs))
+    return ((s, n_nomial_prob(counts=s, probs=color_probs))
             for _, s in stone_combinations.cache.iterrows())
 
 

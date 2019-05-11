@@ -2,6 +2,8 @@ import pytest
 
 from fehnt.core_utils import *
 
+from fractions import Fraction
+
 
 @pytest.mark.parametrize(['n', 'k', 'expt_result'], [
     (0, 0, 1),
@@ -28,71 +30,25 @@ def test_nCk(n, k, expt_result):
     assert nCk(n, k) == expt_result
 
 
-@pytest.fixture
-def ppcalc():
-    pool_data = [
-        (StarPools._5_STAR_FOCUS, Colors.RED, 1),
-        (StarPools._5_STAR_FOCUS, Colors.BLUE, 1),
-        (StarPools._5_STAR_FOCUS, Colors.GREEN, 1),
-        (StarPools._5_STAR_FOCUS, Colors.GRAY, 1),
+@pytest.mark.parametrize(['counts', 'prob_ratios', 'expt_result'], [
+    ((0, 0), (1, 1), 1),
 
-        (StarPools._5_STAR, Colors.RED, 19),
-        (StarPools._5_STAR, Colors.BLUE, 15),
-        (StarPools._5_STAR, Colors.GREEN, 15),
-        (StarPools._5_STAR, Colors.GRAY, 8),
+    ((0, 1), (1, 1), Fraction(1, 2)),
+    ((1, 0, 0), (1, 1, 0), Fraction(1, 2)),
 
-        (StarPools._4_STAR, Colors.RED, 32),
-        (StarPools._4_STAR, Colors.BLUE, 30),
-        (StarPools._4_STAR, Colors.GREEN, 20),
-        (StarPools._4_STAR, Colors.GRAY, 28),
+    ((2, 0), (1, 1), Fraction(1, 4)),
 
-        (StarPools._3_STAR, Colors.RED, 32),
-        (StarPools._3_STAR, Colors.BLUE, 29),
-        (StarPools._3_STAR, Colors.GREEN, 19),
-        (StarPools._3_STAR, Colors.GRAY, 28),
-    ]
-    pool_counts = (
-        pd.DataFrame
-        .from_records(pool_data, columns=['star', 'color', 'count'])
-        .set_index(['star', 'color'])
-        ['count']
-    )
+    ((1, 0, 1), (1, 1, 1), Fraction(2, 9)),
+])
+def test_n_nomial_prob(counts, prob_ratios, expt_result):
+    denom = sum(prob_ratios)
+    probs = tuple(Fraction(i, denom) for i in prob_ratios)
 
-    return PoolProbsCalculator(pool_counts)
+    counts = pd.Series(counts)
+    probs = pd.Series(probs)
 
-
-def test_ppc_starpool(ppcalc):
-    for i in range(5):
-        starpool = ppcalc.starpool(i)
-        assert list(starpool.index) == list(StarPools)
-        assert starpool.sum() == 1
-
-
-def test_ppc_pool(ppcalc):
-    from itertools import product
-
-    for i in range(5):
-        pool = ppcalc.pool(i)
-        assert list(pool.index) == list(product(StarPools, Colors))
-        assert pool.sum() == 1
-
-
-def test_ppc_colorpool(ppcalc):
-    for i in range(5):
-        colorpool = ppcalc.colorpool(i)
-        assert list(colorpool.index) == list(Colors)
-        assert colorpool.sum() == 1
-
-
-def test_stone_combo_prob(ppcalc):
-    for i in range(5):
-        colorpool = ppcalc.colorpool(i)
-        assert sum(
-            stone_combo_prob(stones, colorpool)
-            for stones in stone_combinations()
-        ) == 1
+    assert n_nomial_prob(counts, probs) == expt_result
 
 
 if __name__ == '__main__':
     pytest.main()
-
