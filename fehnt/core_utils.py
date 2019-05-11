@@ -5,16 +5,8 @@ from fractions import Fraction
 from functools import lru_cache
 from itertools import chain
 
-# TODO use static_frame instead
 import numpy as np
-import pandas as pd
-
-
-def nCkarray(n, k_array):
-    result = 1
-    for i, j in enumerate(chain(*(range(k) for k in k_array))):
-        result = (result * (n-i)) // (j+1)
-    return result
+import static_frame as sf
 
 
 EventState = namedtuple('EventState', 'orb_count dry_streak targets_pulled')
@@ -32,6 +24,13 @@ class StateStruct(namedtuple('_', 'event session')):
 ResultState = namedtuple('ResultState', 'orb_count targets_pulled')
 
 
+def nCkarray(n, k_array):
+    result = 1
+    for i, j in enumerate(chain(*(range(k) for k in k_array))):
+        result = (result * (n-i)) // (j+1)
+    return result
+
+
 def stone_combo_prob(stone_counts, color_probs):
     no_summons = stone_counts.sum()
 
@@ -42,12 +41,12 @@ def stone_combo_prob(stone_counts, color_probs):
 # @lru_cache(maxsize=None)
 def stone_combinations(color_probs):
     return ((s, stone_combo_prob(s, color_probs))
-            for _, s in stone_combinations.cache.iterrows())
+            for s in stone_combinations.cache.iter_series(axis=1))
 
 
-stone_combinations.cache = pd.DataFrame.from_records([
+stone_combinations.cache = sf.Frame.from_records([
     (i, j, k, summons_per_session-i-j-k)
     for i in range(summons_per_session+1)
     for j in range(summons_per_session+1-i)
     for k in range(summons_per_session+1-i-j)
-], columns=Colors)
+], columns=[c for c in Colors])

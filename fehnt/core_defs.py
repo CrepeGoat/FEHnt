@@ -8,6 +8,9 @@ class Colors(enum.Enum):
     GREEN = 2
     GRAY = 3
 
+    def __lt__(self, other):
+        return self.value < other.value
+
 
 @enum.unique
 class StarRatings(enum.IntEnum):
@@ -23,6 +26,9 @@ class StarPools(enum.Enum):
     _4_STAR_FOCUS = 4.5
     _4_STAR = 4
     _3_STAR = 3
+
+    def __lt__(self, other):
+        return self.value < other.value
 
 
 stone_costs = (None, 3, 4, 4, 4, 5)

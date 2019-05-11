@@ -1,13 +1,14 @@
 from .core import *
 
+import static_frame as sf
 
 def run():
     # (based on Heroes of Gallia summoning event)
-    pool_counts = pd.DataFrame.from_records([
+    pool_counts = sf.Frame.from_records([
         (StarPools._5_STAR_FOCUS, Colors.RED, 1),
         (StarPools._5_STAR_FOCUS, Colors.BLUE, 1),
         (StarPools._5_STAR_FOCUS, Colors.GREEN, 1),
-        (StarPools._5_STAR_FOCUS, Colors.GRAY, 1),
+        #(StarPools._5_STAR_FOCUS, Colors.GRAY, 1),
 
         (StarPools._5_STAR, Colors.RED, 19),
         (StarPools._5_STAR, Colors.BLUE, 15),
@@ -23,11 +24,16 @@ def run():
         (StarPools._3_STAR, Colors.BLUE, 29),
         (StarPools._3_STAR, Colors.GREEN, 19),
         (StarPools._3_STAR, Colors.GRAY, 28),
-    ], columns=['star', 'color', 'count'], index=['star', 'color'])['count']
+    ], columns=['star', 'color', 'count']).set_index_hierarchy(
+        ('star', 'color'), drop=True
+    )['count']
 
-    target_pool_counts = pd.DataFrame.from_records([
-        (StarPools._5_STAR_FOCUS, Colors.RED, 1),
-    ], columns=['star', 'color', 'count'], index=['star', 'color'])['count']
+    target_pool_counts = sf.Frame.from_records([
+        (StarPools._5_STAR_FOCUS, Colors.BLUE, 1),
+        (StarPools._5_STAR_FOCUS, Colors.GREEN, 1),
+    ], columns=['star', 'color', 'count']).set_index_hierarchy(
+        ('star', 'color'), drop=True
+    )['count']
 
     outcome_probs = get_outcomes(
         event_details=StandardEventDetails(pool_counts),
