@@ -31,11 +31,11 @@ def nCkarray(n, k_array):
     return result
 
 
-def stone_combo_prob(stone_counts, color_probs):
-    no_summons = stone_counts.sum()
+def n_nomial_prob(counts, probs):
+    total_count = counts.sum()
 
-    return (nCkarray(no_summons, stone_counts.values)
-            * (color_probs[stone_counts.index] ** stone_counts).prod())
+    return (nCkarray(total_count, counts.values)
+            * (probs[counts.index] ** counts).prod())
 
 
 # @lru_cache(maxsize=None)
