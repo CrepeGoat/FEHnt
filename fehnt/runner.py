@@ -29,10 +29,9 @@ def run():
         (StarPools._5_STAR_FOCUS, Colors.RED, 1),
     ], columns=['star', 'color', 'count'], index=['star', 'color'])['count']
 
-    outcome_probs = get_outcomes(
+    outcome_probs = OutcomeCalculator(
         event_details=StandardEventDetails(pool_counts),
         summoner=ColorHuntSummoner(target_pool_counts),
-        no_of_orbs=10
-    )
+    )(no_of_orbs=10)
     for state, prob in format_results(outcome_probs):
         print("{}: {:%}".format(state, float(prob)))
