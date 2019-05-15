@@ -68,10 +68,8 @@ class OutcomeCalculator:
                     int(self.event_details.pool_counts[starpool, stone_choice])
                 )
 
-                pulls = (
-                    (targets_pulled_success, prob_success),
-                    (event.targets_pulled, 1-prob_success)
-                )
+                pulls = ((targets_pulled_success, prob_success),
+                         (event.targets_pulled, 1-prob_success))
 
             for targets_pulled, subsubprob in pulls:
                 new_event = EventState(orb_count, dry_streak, targets_pulled)
@@ -102,12 +100,12 @@ class OutcomeCalculator:
             print('  orbs left:', event.orb_count)
 
             if not self.summoner.should_continue(event.targets_pulled):
-                print('chose to stop summoning')
+                print('quit summoning event')
                 self.push_outcome(event, prob)
                 continue
 
             if session.stone_counts.sum() == 0:
-                print('completed summon session')
+                print('completed summoning session')
                 self.init_new_session(event, prob)
                 continue
 
@@ -125,7 +123,7 @@ class OutcomeCalculator:
                 if session.stone_counts.sum() == summons_per_session:
                     raise SummonChoiceError('cannot quit session without summoning'
                                             ' at least one Hero')
-                print('quit summon session')
+                print('left summoning session')
                 self.init_new_session(event, prob)
             else:
                 if session.stone_counts[stone_choice] == 0:
