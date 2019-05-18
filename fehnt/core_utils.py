@@ -40,7 +40,7 @@ def n_nomial_prob(counts, probs):
 
 # @lru_cache(maxsize=None)
 def stone_combinations(color_probs):
-    return ((s, stone_combo_prob(s, color_probs))
+    return ((s, n_nomial_prob(s, color_probs))
             for s in stone_combinations.cache.iter_series(axis=1))
 
 
