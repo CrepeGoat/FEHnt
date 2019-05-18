@@ -27,9 +27,9 @@ def standard_event_details():
         (StarPools._3_STAR, Colors.GRAY, 28),
     ]
     pool_counts = (
-        pd.DataFrame
+        sf.Frame
         .from_records(pool_data, columns=['star', 'color', 'count'])
-        .set_index(['star', 'color'])
+        .set_index_hierarchy(['star', 'color'])
         ['count']
     )
 
@@ -48,7 +48,7 @@ def test_standard_event_pool_probs(standard_event_details):
 
     for i in range(5):
         pool = standard_event_details.pool_probs(i)
-        assert set(pool.index) <= set(product(StarPools, Colors))
+        assert set(tuple(i) for i in pool.index) <= set(product(StarPools, Colors))
         assert pool.sum() == 1
 
 

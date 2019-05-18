@@ -3,16 +3,10 @@ from fehnt.core_defs import *
 from collections import namedtuple
 from fractions import Fraction
 from functools import lru_cache
+from itertools import chain
 
-# TODO use static_frame instead
-import pandas as pd
-
-
-def nCk(n, k):
-    result = 1
-    for i in range(k):
-        result = (result * (n-i)) // (i+1)
-    return result
+import numpy as np
+import static_frame as sf
 
 
 EventState = namedtuple('EventState', 'orb_count dry_streak targets_pulled')
@@ -30,24 +24,26 @@ class StateStruct(namedtuple('_', 'event session')):
 ResultState = namedtuple('ResultState', 'orb_count targets_pulled')
 
 
-def n_nomial_prob(counts, probs):
-    total_count = counts.sum()
-    remaining_counts = total_count - (counts.cumsum()-counts)
+def nCkarray(k_array):
+    result = 1
+    for i, j in enumerate(chain(*(range(1, k+1) for k in k_array)), 1):
+        result = (result * i) // j
+    return result
 
-    return (probs[counts.index] ** counts
-            * remaining_counts.combine(counts, nCk)
-            ).prod()
+
+def n_nomial_prob(counts, probs):
+    return nCkarray(counts.values) * (probs ** counts).prod()
 
 
 # @lru_cache(maxsize=None)
 def stone_combinations(color_probs):
-    return ((s, n_nomial_prob(counts=s, probs=color_probs))
-            for _, s in stone_combinations.cache.iterrows())
+    return ((s, n_nomial_prob(s, color_probs))
+            for s in stone_combinations.cache.iter_series(axis=1))
 
 
-stone_combinations.cache = pd.DataFrame.from_records([
+stone_combinations.cache = sf.Frame.from_records([
     (i, j, k, summons_per_session-i-j-k)
     for i in range(summons_per_session+1)
     for j in range(summons_per_session+1-i)
     for k in range(summons_per_session+1-i-j)
-], columns=Colors)
+], columns=[c for c in Colors])

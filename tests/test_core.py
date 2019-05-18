@@ -10,7 +10,7 @@ from fehnt.core import *
 
 @pytest.fixture
 def pool_probs():
-    value = pd.DataFrame.from_records([
+    value = sf.Frame.from_records([
         (StarPools._5_STAR, Colors.RED, 2/24),
         (StarPools._5_STAR, Colors.BLUE, 3/24),
         (StarPools._5_STAR, Colors.GREEN, 3/24),
@@ -21,12 +21,12 @@ def pool_probs():
     ], columns=['star', 'color', 'probability'])
     assert value['probability'].sum() == 1
     # value['probability'] = sp.symbols('p0:6', nonnegative=True)
-    return value.set_index(['star', 'color'])['probability']
+    return value.set_index_hierarchy(['star', 'color'])['probability']
 
 
 @pytest.fixture
 def pool_counts():
-    value = pd.DataFrame.from_records([
+    value = sf.Frame.from_records([
         (StarPools._5_STAR, Colors.RED, 2),
         (StarPools._5_STAR, Colors.BLUE, 2),
         (StarPools._5_STAR, Colors.GREEN, 2),
@@ -36,16 +36,15 @@ def pool_counts():
         (StarPools._4_STAR, Colors.GREEN, 4),
     ], columns=['star', 'color', 'count'])
     # value['count'] = sp.symbols('c0:6', nonnegative=True, integer=True)
-    return value.set_index(['star', 'color'])['count']
+    return value.set_index_hierarchy(['star', 'color'])['count']
 
 
 @pytest.fixture
 def target_pool_counts():
-    value = pd.DataFrame.from_records([
-        (StarPools._5_STAR, Colors.RED, 1),
-    ], columns=['star', 'color', 'count'])
-    # value['count'] = sp.symbols('c0:1', nonnegative=True, integer=True)
-    return value.set_index(['star', 'color'])['count']
+    value = sf.Series([1], index=sf.IndexHierarchy.from_product(
+        [StarPools._5_STAR], [Colors.RED]
+    ))
+    return value
 
 
 def test_OutcomeCalculator_init_new_session(monkeypatch):
@@ -57,7 +56,6 @@ def test_OutcomeCalculator_init_new_session(monkeypatch):
     stone_combos = tuple(zip(stones, stone_probs))
 
     # Monkey-patches
-    monkeypatch.setattr('fehnt.core.sf_ify', lambda x: x)
     monkeypatch.setattr('fehnt.core.stone_combinations',
                         lambda x: (i for i in stone_combos))
 
@@ -90,10 +88,11 @@ def test_OutcomeCalculator_branch_event(monkeypatch, pool_probs, pool_counts,
                              summoner=mock.Mock(targets=target_pool_counts),
                              states=defaultdict(int))
     outcome_calc.event_details.pool_probs.return_value = pool_probs
+    # outcome_calc.event_details.pool_counts.return_value = pool_counts
     event = EventState(orb_count=sp.symbols('orb_count'),
                        dry_streak=sp.symbols('dry_streak'),
                        targets_pulled=0*target_pool_counts)
-    session = SessionState(prob_level=1, stone_counts=pd.Series(
+    session = SessionState(prob_level=1, stone_counts=sf.Series(
         [1, 0, 0], index=[Colors.RED, Colors.BLUE, Colors.GREEN]
     ))
     # probability = sp.symbols('p', nonnegative=True)

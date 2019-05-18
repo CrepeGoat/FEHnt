@@ -1,13 +1,12 @@
 from .core_defs import *
 from .core_utils import *
-from .pd_sf_convert import *
 from .event_behaviors import *
 from .summoner_behaviors import *
 
 from collections import defaultdict
 from fractions import Fraction
 
-import pandas as pd
+import static_frame as sf
 import sortedcontainers as sc
 
 
@@ -33,24 +32,27 @@ class OutcomeCalculator:
 
         for stones, stones_prob in stone_combinations(color_probs):
             self.states[StateStruct(
-                sf_ify(event),
-                sf_ify(SessionState(prob_tier, stones))
+                event, SessionState(prob_tier, stones)
             )] += probability * stones_prob
 
     def branch_event(self, event, session, prob, stone_choice):
+        stone_count_choice = (sf.Series([1], index=[stone_choice])
+                              .reindex(session.stone_counts.index,
+                                       fill_value=0))
         new_session = session._replace(
-            stone_counts=session.stone_counts.sub(
-                pd.Series([1], index=[stone_choice]), fill_value=0
-            )
+            stone_counts=session.stone_counts - stone_count_choice
         )
         orb_count = event.orb_count - stone_cost(session.stone_counts.sum())
 
         choice_starpool_probs = (self.event_details
                                  .pool_probs(session.prob_level)
-                                 .xs(stone_choice, level='color'))
-        choice_starpool_probs /= choice_starpool_probs.sum()
+                                 [sf.HLoc[:, stone_choice]]
+                                 .reindex_drop_level(-1))
 
-        for starpool, subprob in choice_starpool_probs.iteritems():
+        choice_starpool_probs = (choice_starpool_probs
+                                 / choice_starpool_probs.sum())
+
+        for starpool, subprob in choice_starpool_probs.iter_element_items():
             total_prob = prob * subprob
 
             if starpool in (StarPools._5_STAR_FOCUS, StarPools._5_STAR):
@@ -61,8 +63,12 @@ class OutcomeCalculator:
             if (starpool, stone_choice) not in self.summoner.targets.index:
                 pulls = ((event.targets_pulled, 1),)
             else:
-                targets_pulled_success = event.targets_pulled.copy()
-                targets_pulled_success[starpool, stone_choice] += 1
+                targets_pulled_success = event.targets_pulled + sf.Series(
+                    [1], index=sf.IndexHierarchy.from_labels([
+                        (starpool, stone_choice)
+                    ])
+                ).reindex(event.targets_pulled.index, fill_value=0)
+
                 prob_success = Fraction(
                     int(self.summoner.targets[starpool, stone_choice]),
                     int(self.event_details.pool_counts[starpool, stone_choice])
@@ -74,14 +80,13 @@ class OutcomeCalculator:
             for targets_pulled, subsubprob in pulls:
                 new_event = EventState(orb_count, dry_streak, targets_pulled)
 
-                self.states[StateStruct(
-                    sf_ify(new_event),
-                    sf_ify(new_session)
-                )] += total_prob * subsubprob
+                self.states[StateStruct(new_event, new_session)] += (
+                    total_prob * subsubprob
+                )
 
     def push_outcome(self, event, probability):
         result = ResultState(event.orb_count, event.targets_pulled)
-        self.outcomes[sf_ify(result)] += probability
+        self.outcomes[result] += probability
 
     def __call__(self, no_of_orbs):
         self.states = DefaultSortedDict()
@@ -95,8 +100,6 @@ class OutcomeCalculator:
             print("  no. of states:", len(self))
 
             (event, session), prob = next(self)
-            event = pd_ify(event)
-            session = pd_ify(session)
             print('  orbs left:', event.orb_count)
 
             if not self.summoner.should_continue(event.targets_pulled):
