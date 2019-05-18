@@ -24,18 +24,15 @@ class StateStruct(namedtuple('_', 'event session')):
 ResultState = namedtuple('ResultState', 'orb_count targets_pulled')
 
 
-def nCkarray(n, k_array):
+def nCkarray(k_array):
     result = 1
-    for i, j in enumerate(chain(*(range(k) for k in k_array))):
-        result = (result * (n-i)) // (j+1)
+    for i, j in enumerate(chain(*(range(1, k+1) for k in k_array)), 1):
+        result = (result * i) // j
     return result
 
 
 def n_nomial_prob(counts, probs):
-    total_count = counts.sum()
-
-    return (nCkarray(total_count, counts.values)
-            * (probs[counts.index] ** counts).prod())
+    return nCkarray(counts.values) * (probs ** counts).prod()
 
 
 # @lru_cache(maxsize=None)
