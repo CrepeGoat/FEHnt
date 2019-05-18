@@ -7,20 +7,24 @@ from itertools import chain
 import numpy as np
 
 
-from static_frame.core.util import _NULL_SLICE
+from static_frame.core.util import NULL_SLICE
 from static_frame.core.util import _UNIT_SLICE
 
-from static_frame.core.util import _INT_TYPES
-from static_frame.core.util import _KEY_ITERABLE_TYPES
+from static_frame.core.util import INT_TYPES
+from static_frame.core.util import KEY_ITERABLE_TYPES
+from static_frame.core.util import KEY_MULTIPLE_TYPES
+
 from static_frame.core.util import GetItemKeyType
 from static_frame.core.util import GetItemKeyTypeCompound
 from static_frame.core.util import DtypeSpecifier
+
+from static_frame.core.util import column_2d_filter
 
 from static_frame.core.util import mloc
 from static_frame.core.util import array_shift
 from static_frame.core.util import full_for_fill
 from static_frame.core.util import _resolve_dtype
-from static_frame.core.util import _resolve_dtype_iter
+from static_frame.core.util import resolve_dtype_iter
 from static_frame.core.util import _dtype_to_na
 from static_frame.core.util import _array_to_groups_and_locations
 from static_frame.core.util import _isna
@@ -51,15 +55,6 @@ class TypeBlocks(metaclass=MetaOperatorDelegate):
             '_row_dtype',
             'iloc',
             )
-
-    @staticmethod
-    def single_column_filter(array: np.ndarray) -> np.ndarray:
-        '''Reshape a flat ndim 1 array into a 2D array with one columns and rows of length. This is only used (a) for getting string representations and (b) for using np.concatenate and np binary operators on 1D arrays.
-        '''
-        # it is not clear when reshape is a copy or a view
-        if array.ndim == 1:
-            return np.reshape(array, (array.shape[0], 1))
-        return array
 
     @staticmethod
     def shape_filter(array: np.ndarray) -> tp.Tuple[int, int]:
@@ -164,7 +159,7 @@ class TypeBlocks(metaclass=MetaOperatorDelegate):
         self._shape = shape
 
         if self._blocks:
-            self._row_dtype = _resolve_dtype_iter(b.dtype for b in self._blocks)
+            self._row_dtype = resolve_dtype_iter(b.dtype for b in self._blocks)
         else:
             self._row_dtype = None
 
@@ -207,7 +202,6 @@ class TypeBlocks(metaclass=MetaOperatorDelegate):
         a.flags.writeable = False
         return a
 
-    # consider renaming pointers
     @property
     def mloc(self) -> np.ndarray:
         '''Return an immutable ndarray of NP array memory location integers.
@@ -215,7 +209,7 @@ class TypeBlocks(metaclass=MetaOperatorDelegate):
         a = np.fromiter(
                 (mloc(b) for b in self._blocks),
                 count=len(self._blocks),
-                dtype=int)
+                dtype=np.int64)
         a.flags.writeable = False
         return a
 
@@ -247,21 +241,29 @@ class TypeBlocks(metaclass=MetaOperatorDelegate):
     # value extraction
 
     @staticmethod
-    def _blocks_to_array(*, blocks, shape, row_dtype) -> np.ndarray:
+    def _blocks_to_array(*,
+            blocks: tp.Iterable[np.ndarray],
+            shape: tp.Tuple[int, int],
+            row_dtype,
+            row_multiple: bool
+            ) -> np.ndarray:
         '''
-        Given blocks and a combined shape, return a consolidated single array.
+        Given blocks and a combined shape, return a consolidated 2D single array.
+
+        Args:
+            shape: used in construting returned array; not ussed as a constraint.
         '''
+        # assume column_mutltiple is True, as this routine is called after handling extraction of single columns
         if len(blocks) == 1:
-            return blocks[0]
+            return column_2d_filter(blocks[0])
 
         # get empty array and fill parts
-        if shape[0] == 1:
-            # greturn 1 column TypeBlock as a 1D array with length equal to the number of columns
+        if not row_multiple: # and shape[0] == 1:
+            # return 1 row TypeBlock as a 1D array with length equal to the number of columns
             array = np.empty(shape[1], dtype=row_dtype)
         else: # get ndim 2 shape array
             array = np.empty(shape, dtype=row_dtype)
 
-        # can we use a np.concatenate, but need to handle 1D arrrays and need to converty type before concatenate
         pos = 0
         for block in blocks:
             if block.ndim == 1:
@@ -286,10 +288,12 @@ class TypeBlocks(metaclass=MetaOperatorDelegate):
     def values(self) -> np.ndarray:
         '''Returns a consolidated NP array of the all blocks.
         '''
+        # always return a 2D array
         return self._blocks_to_array(
                 blocks=self._blocks,
                 shape=self._shape,
-                row_dtype=self._row_dtype)
+                row_dtype=self._row_dtype,
+                row_multiple=True)
 
     def axis_values(self, axis=0, reverse=False) -> tp.Generator[
             np.ndarray, None, None]:
@@ -347,10 +351,6 @@ class TypeBlocks(metaclass=MetaOperatorDelegate):
         '''
         Generator of pairs of iloc locations, values accross entire TypeBlock.
         '''
-        #np.ndindex(self._shape) # get all target indices
-        # offsets = np.cumsum([b.shape[1] if b.ndim == 2 else 1 for b in self._blocks])
-        # gens = [np.ndenumerate(self.single_column_filter(b)) for b in self._blocks]
-
         for iloc in np.ndindex(self._shape):
             block_idx, column = self._index[iloc[1]]
             b = self._blocks[block_idx]
@@ -427,7 +427,7 @@ class TypeBlocks(metaclass=MetaOperatorDelegate):
         '''This will always return a 2D array.
         '''
         # NOTE: if len(group) is 1, can return
-        return np.concatenate([cls.single_column_filter(x) for x in group], axis=1)
+        return np.concatenate([column_2d_filter(x) for x in group], axis=1)
 
 
     @classmethod
@@ -662,7 +662,7 @@ class TypeBlocks(metaclass=MetaOperatorDelegate):
                         # if this is a numeric single columns we just copy it and process it later; but if this is a logical application (and, or) then out is already boolean
                         if out.dtype == bool and b.dtype != bool:
                             # making 2D with axis 0 func will result in element-wise operation
-                            out[:, idx] = func(self.single_column_filter(b), axis=0)
+                            out[:, idx] = func(column_2d_filter(b), axis=0)
                         else: # otherwise, keep as is
                             out[:, idx] = b
                     else:
@@ -690,7 +690,7 @@ class TypeBlocks(metaclass=MetaOperatorDelegate):
         d = None
         outermost = True # only for the first
         for idx, block in enumerate(self._blocks):
-            block = self.single_column_filter(block)
+            block = column_2d_filter(block)
             h = '' if idx > 0 else self.__class__
             display = Display.from_values(block,
                     h,
@@ -783,10 +783,10 @@ class TypeBlocks(metaclass=MetaOperatorDelegate):
         Returns:
             A generator iterable of pairs, where values are block index, slice or column index
         '''
-        if key is None or (isinstance(key, slice) and key == _NULL_SLICE):
+        if key is None or (isinstance(key, slice) and key == NULL_SLICE):
             yield from self._all_block_slices() # slow from line profiler, 80% of this function call
         else:
-            if isinstance(key, _INT_TYPES):
+            if isinstance(key, INT_TYPES):
                 # the index has the pair block, column integer
                 yield self._index[key]
             else: # all cases where we try to get contiguous slices
@@ -798,7 +798,7 @@ class TypeBlocks(metaclass=MetaOperatorDelegate):
                 elif isinstance(key, np.ndarray) and key.dtype == bool:
                     # NOTE: if self._index was an array we could use Boolean selection directly
                     indices = (self._index[idx] for idx, v in enumerate(key) if v)
-                elif isinstance(key, _KEY_ITERABLE_TYPES):
+                elif isinstance(key, KEY_ITERABLE_TYPES):
                     # an iterable of keys, may not have contiguous regions; provide in the order given; set as a generator; self._index is a list, not an np.array, so cannot slice self._index; requires iteration in passed generator so probably this is as fast as it can be.
                     if retain_key_order:
                         indices = (self._index[x] for x in key)
@@ -1188,7 +1188,6 @@ class TypeBlocks(metaclass=MetaOperatorDelegate):
                 yield assigned
 
 
-    # @profile
     def _slice_blocks(self,
             row_key=None,
             column_key=None) -> tp.Generator[np.ndarray, None, None]:
@@ -1197,7 +1196,7 @@ class TypeBlocks(metaclass=MetaOperatorDelegate):
         The result is suitable for passing to TypeBlocks constructor.
         '''
         row_key_null = (row_key is None or
-                (isinstance(row_key, slice) and row_key == _NULL_SLICE))
+                (isinstance(row_key, slice) and row_key == NULL_SLICE))
 
         single_row = False
         if row_key_null:
@@ -1206,7 +1205,7 @@ class TypeBlocks(metaclass=MetaOperatorDelegate):
                 single_row = True
         elif isinstance(row_key, int):
             single_row = True
-        elif isinstance(row_key, _KEY_ITERABLE_TYPES) and len(row_key) == 1:
+        elif isinstance(row_key, KEY_ITERABLE_TYPES) and len(row_key) == 1:
             # an iterable of index integers is expected here
             single_row = True
         elif isinstance(row_key, slice):
@@ -1252,6 +1251,8 @@ class TypeBlocks(metaclass=MetaOperatorDelegate):
             row_key=None,
             column_key=None) -> np.ndarray:
         '''Alternative extractor that returns just an np array, concatenating blocks as necessary. Used by internal clients that need to process row/column with an array.
+
+        This will be consistent with NumPy as to the dimensionality returned: if a non-multi selection is made, 1D array will be returned.
         '''
         # identifying column_key as integer, then we only access one block, and can return directly without iterating over blocks
         if isinstance(column_key, int):
@@ -1283,12 +1284,15 @@ class TypeBlocks(metaclass=MetaOperatorDelegate):
                 columns += b.shape[1]
             blocks.append(b)
 
-        row_dtype = _resolve_dtype_iter(b.dtype for b in blocks)
+        row_dtype = resolve_dtype_iter(b.dtype for b in blocks)
+        row_multiple = row_key is None or isinstance(row_key, KEY_MULTIPLE_TYPES)
 
+        # import ipdb; ipdb.set_trace()
         return self._blocks_to_array(
                 blocks=blocks,
                 shape=(rows, columns),
-                row_dtype=row_dtype)
+                row_dtype=row_dtype,
+                row_multiple=row_multiple)
 
     def _extract(self,
             row_key: GetItemKeyType = None,
@@ -1311,7 +1315,7 @@ class TypeBlocks(metaclass=MetaOperatorDelegate):
             block_idx, column = self._index[column_key]
             b = self._blocks[block_idx]
             row_key_null = (row_key is None or
-                    (isinstance(row_key, slice) and row_key == _NULL_SLICE))
+                    (isinstance(row_key, slice) and row_key == NULL_SLICE))
             if b.ndim == 1:
                 if row_key_null: # return a column
                     return TypeBlocks.from_blocks(b)
@@ -1411,8 +1415,8 @@ class TypeBlocks(metaclass=MetaOperatorDelegate):
 
             def operation():
                 for a, b in zip_longest(
-                        (self.single_column_filter(op) for op in self_operands),
-                        (self.single_column_filter(op) for op in other_operands)
+                        (column_2d_filter(op) for op in self_operands),
+                        (column_2d_filter(op) for op in other_operands)
                         ):
                     result = operator(a, b)
                     result.flags.writeable = False # own the data
@@ -1457,7 +1461,7 @@ class TypeBlocks(metaclass=MetaOperatorDelegate):
         '''
         blocks = []
         for b in self._blocks:
-            b = self.single_column_filter(b).transpose()
+            b = column_2d_filter(b).transpose()
             if b.dtype != self._row_dtype:
                 b = b.astype(self._row_dtype)
             blocks.append(b)

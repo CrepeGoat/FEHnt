@@ -37,13 +37,13 @@ import numpy as np
 #     U 	Unicode
 #     V 	void
 
-_DEFAULT_SORT_KIND = 'mergesort'
+DEFAULT_SORT_KIND = 'mergesort'
 _DEFAULT_STABLE_SORT_KIND = 'mergesort'
 _DTYPE_STR_KIND = ('U', 'S') # S is np.bytes_
 _DTYPE_INT_KIND = ('i', 'u') # signed and unsigned
 DTYPE_OBJECT = np.dtype(object)
 
-_NULL_SLICE = slice(None)
+NULL_SLICE = slice(None)
 _UNIT_SLICE = slice(0, 1)
 SLICE_STOP_ATTR = 'stop'
 SLICE_STEP_ATTR = 'step'
@@ -51,8 +51,8 @@ SLICE_ATTRS = ('start', SLICE_STOP_ATTR, SLICE_STEP_ATTR)
 STATIC_ATTR = 'STATIC'
 
 # defaults to float64
-_EMPTY_ARRAY = np.array((), dtype=None)
-_EMPTY_ARRAY.flags.writeable = False
+EMPTY_ARRAY = np.array((), dtype=None)
+EMPTY_ARRAY.flags.writeable = False
 
 _DICT_STABLE = sys.version_info >= (3, 6)
 
@@ -61,14 +61,14 @@ _DICT_STABLE = sys.version_info >= (3, 6)
 #-------------------------------------------------------------------------------
 # utility
 
-_INT_TYPES = (int, np.int_)
+INT_TYPES = (int, np.int_)
 _BOOL_TYPES = (bool, np.bool_)
 
 # for getitem / loc selection
-_KEY_ITERABLE_TYPES = (list, np.ndarray)
+KEY_ITERABLE_TYPES = (list, np.ndarray)
 
 # types of keys that return muultiple items, even if the selection reduces to 1
-_KEY_MULTIPLE_TYPES = (slice, list, np.ndarray)
+KEY_MULTIPLE_TYPES = (slice, list, np.ndarray)
 
 # for type hinting
 # keys once dimension has been isolated
@@ -82,7 +82,12 @@ GetItemKeyTypeCompound = tp.Union[
 CallableOrMapping = tp.Union[tp.Callable, tp.Mapping]
 KeyOrKeys = tp.Union[tp.Hashable, tp.Iterable[tp.Hashable]]
 FilePathOrFileLike = tp.Union[str, StringIO, BytesIO]
+
 DtypeSpecifier = tp.Optional[tp.Union[str, np.dtype, type]]
+
+# support an iterable of specifiers, or mapping based on column names
+DtypesSpecifier = tp.Optional[
+        tp.Union[tp.Iterable[DtypeSpecifier], tp.Dict[tp.Hashable, DtypeSpecifier]]]
 
 DepthLevelSpecifier = tp.Union[int, tp.Iterable[int]]
 
@@ -134,6 +139,22 @@ def name_filter(name: tp.Hashable) -> tp.Hashable:
         raise TypeError('unhashable name attribute', name)
     return name
 
+def column_2d_filter(array: np.ndarray) -> np.ndarray:
+    '''Reshape a flat ndim 1 array into a 2D array with one columns and rows of length. This is used (a) for getting string representations and (b) for using np.concatenate and np binary operators on 1D arrays.
+    '''
+    # it is not clear when reshape is a copy or a view
+    if array.ndim == 1:
+        return np.reshape(array, (array.shape[0], 1))
+    return array
+
+def column_1d_filter(array: np.ndarray) -> np.ndarray:
+    '''
+    Ensure that a column that might be 2D or 1D is returned as a 1D array.
+    '''
+    if array.ndim == 2:
+        # could assert that array.shape[1] == 1, but this will raise if does not fit
+        return np.reshape(array, array.shape[0])
+    return array
 
 def _gen_skip_middle(
         forward_iter: CallableToIterType,
@@ -191,7 +212,7 @@ def _resolve_dtype(dt1: np.dtype, dt2: np.dtype) -> np.dtype:
     # if not a string or an object, can use result type
     return np.result_type(dt1, dt2)
 
-def _resolve_dtype_iter(dtypes: tp.Iterable[np.dtype]):
+def resolve_dtype_iter(dtypes: tp.Iterable[np.dtype]):
     '''Given an iterable of dtypes, do pairwise comparisons to determine compatible overall type. Once we get to object we can stop checking and return object
     '''
     dtypes = iter(dtypes)
@@ -269,7 +290,7 @@ def _dtype_to_na(dtype: np.dtype):
 # ufunc functions that will not work with _DTYPE_STR_KIND, but do work if converted to object arrays; see _UFUNC_AXIS_SKIPNA for the matching functions
 _UFUNC_AXIS_STR_TO_OBJ = {np.min, np.max, np.sum}
 
-def _ufunc_skipna_1d(*, array, skipna, ufunc, ufunc_skipna):
+def ufunc_skipna_1d(*, array, skipna, ufunc, ufunc_skipna):
     '''For one dimensional ufunc array application. Expected to always reduce to single element.
     '''
     # if len(array) == 0:
@@ -324,7 +345,7 @@ def ufunc_unique(array: np.ndarray,
     return np.unique(array, axis=axis)
 
 
-def _iterable_to_array(other) -> tp.Tuple[np.ndarray, bool]:
+def iterable_to_array(other) -> tp.Tuple[np.ndarray, bool]:
     '''Utility method to take arbitary, heterogenous typed iterables and realize them as an NP array. As this is used in isin() functions, identifying cases where we can assume that this array has only unique values is useful. That is done here by type, where Set-like types are marked as assume_unique.
     '''
     v_iter = None
@@ -347,7 +368,7 @@ def _iterable_to_array(other) -> tp.Tuple[np.ndarray, bool]:
         try:
             x = next(v_iter)
         except StopIteration:
-            return _EMPTY_ARRAY, True
+            return EMPTY_ARRAY, True
 
         dtype = type(x)
         array_values = [x]
@@ -384,45 +405,92 @@ def _slice_to_ascending_slice(key: slice, size: int) -> slice:
     start = next(reversed(range(*key.indices(size))))
     return slice(start, stop, -key.step)
 
+#-------------------------------------------------------------------------------
 
-def _slice_to_datetime_slice_args(key):
+_DT64_DAY = np.dtype('datetime64[D]')
+_DT64_MONTH = np.dtype('datetime64[M]')
+_DT64_YEAR = np.dtype('datetime64[Y]')
+_DT64_S = np.dtype('datetime64[s]')
+_DT64_MS = np.dtype('datetime64[ms]')
+
+_TD64_DAY = np.timedelta64(1, 'D')
+_TD64_MONTH = np.timedelta64(1, 'M')
+_TD64_YEAR = np.timedelta64(1, 'Y')
+_TD64_S = np.timedelta64(1, 's')
+_TD64_MS = np.timedelta64(1, 'ms')
+
+_DT_NOT_FROM_INT = (_DT64_DAY, _DT64_MONTH)
+
+def _to_datetime64(
+        value: DateInitializer,
+        dtype: tp.Optional[np.dtype] = None
+        ) -> np.datetime64:
+    '''
+    Convert a value ot a datetime64; this must be a datetime64 so as to be hashable.
+    '''
+    # for now, only support creating from a string, as creation from integers is based on offset from epoch
+    if not isinstance(value, np.datetime64):
+        if dtype is None:
+            # let this constructor figure it out
+            dt = np.datetime64(value)
+        else: # assume value is single value;
+            # note that integers will be converted to units from epoch
+            if isinstance(value, int):
+                if dtype == _DT64_YEAR:
+                    # convert to string as that is likely what is wanted
+                    value = str(value)
+                elif dtype in _DT_NOT_FROM_INT:
+                    raise RuntimeError('attempting to create {} from an integer, which is generally desired as the result will be offset from the epoch.'.format(dtype))
+            # cannot use the datetime directly
+            if dtype != np.datetime64:
+                dt = np.datetime64(value, np.datetime_data(dtype)[0])
+            else: # cannot use a generic datetime type
+                dt = np.datetime64(value)
+    else: # if a dtype was explicitly given, check it
+        if dtype and dt.dtype != dtype:
+            raise RuntimeError('not supported dtype', dt, dtype)
+    return dt
+
+def _slice_to_datetime_slice_args(key, dtype=None):
     for attr in SLICE_ATTRS:
         value = getattr(key, attr)
         if value is None:
             yield None
         else:
-            yield np.datetime64(value)
+            yield _to_datetime64(value, dtype=dtype)
 
-def _key_to_datetime_key(key: GetItemKeyType) -> GetItemKeyType:
+def key_to_datetime_key(
+        key: GetItemKeyType,
+        dtype=np.datetime64) -> GetItemKeyType:
     '''
     Given an get item key for a Date index, convert it to np.datetime64 representation.
     '''
     if isinstance(key, slice):
-        return slice(*_slice_to_datetime_slice_args(key))
+        return slice(*_slice_to_datetime_slice_args(key, dtype=dtype))
 
     if isinstance(key, np.datetime64):
         return key
 
     if isinstance(key, str):
-        # not using self._DTYPE to coerce type further
-        return np.datetime64(key)
+        return _to_datetime64(key, dtype=dtype)
 
     if isinstance(key, np.ndarray):
         if key.dtype.kind == 'b' or key.dtype.kind == 'M':
             return key
-        return key.astype(np.datetime64)
-
-    if hasattr(key, '__iter__') and hasattr(key, '__len__'):
-        return np.fromiter(key, dtype=np.datetime64, count=len(key))
+        return key.astype(dtype)
 
     if hasattr(key, '__len__'):
-        return np.array(key, dtype=np.datetime64)
+        # use array constructor to determine type
+        return np.array(key, dtype=dtype)
 
     if hasattr(key, '__next__'): # a generator-like
-        return np.array(tuple(key), dtype=np.datetime64)
+        return np.array(tuple(key), dtype=dtype)
 
     # for now, return key unaltered
     return key
+
+#-------------------------------------------------------------------------------
+
 
 def _dict_to_sorted_items(
             mapping: tp.Dict) -> tp.Generator[
@@ -638,7 +706,7 @@ def array_set_ufunc_many(
 
     return result
 
-def _array2d_to_tuples(array: np.ndarray) -> tp.Generator[tp.Tuple, None, None]:
+def array2d_to_tuples(array: np.ndarray) -> tp.Generator[tp.Tuple, None, None]:
     for row in array: # assuming 2d
         yield tuple(row)
 
@@ -671,19 +739,19 @@ def _ufunc2d(
         # sort so as to duplicate results from NP functions
         # NOTE: this sort may not always be necssary
         return np.array(sorted(result), dtype=object)
-    else:
-        assert array.shape[1] == other.shape[1]
-        # this does will work if dyptes are differently sized strings, such as U2 and U3
-        dtype = _resolve_dtype(array.dtype, other.dtype)
-        if array.dtype != dtype:
-            array = array.astype(dtype)
-        if other.dtype != dtype:
-            other = other.astype(dtype)
 
-        width = array.shape[1]
-        array_view = array.view([('', array.dtype)] * width)
-        other_view = other.view([('', other.dtype)] * width)
-        return func(array_view, other_view).view(dtype).reshape(-1, width)
+    assert array.shape[1] == other.shape[1]
+    # this does will work if dyptes are differently sized strings, such as U2 and U3
+    dtype = _resolve_dtype(array.dtype, other.dtype)
+    if array.dtype != dtype:
+        array = array.astype(dtype)
+    if other.dtype != dtype:
+        other = other.astype(dtype)
+
+    width = array.shape[1]
+    array_view = array.view([('', array.dtype)] * width)
+    other_view = other.view([('', other.dtype)] * width)
+    return func(array_view, other_view).view(dtype).reshape(-1, width)
 
 
 def intersect2d(array: np.ndarray,
@@ -724,17 +792,24 @@ def write_optional_file(
         fp: tp.Optional[FilePathOrFileLike] = None,
         ):
 
-    if not fp:
+    fd = f = None
+    if not fp: # get a temp file
         fd, fp = tempfile.mkstemp(suffix='.html', text=True)
-    else:
-        fd = None
+    elif isinstance(fp, StringIO):
+        f = fp
+        fp = None
+    # nothing to do if we have an fp
 
-    try:
-        with open(fp, 'w') as f:
-            f.write(content)
-    finally:
-        if fd is not None:
-            os.close(fd)
+    if f is None: # do not have a file object
+        try:
+            with open(fp, 'w') as f:
+                f.write(content)
+        finally:
+            if fd is not None:
+                os.close(fd)
+    else: # string IO
+        f.write(content)
+        f.seek(0)
     return fp
 
 #-------------------------------------------------------------------------------
@@ -845,7 +920,7 @@ class InterfaceAsType:
         return self._func_getitem(key)
 
     def __call__(self, dtype):
-        return self._func_getitem(_NULL_SLICE)(dtype)
+        return self._func_getitem(NULL_SLICE)(dtype)
 
 
 #-------------------------------------------------------------------------------
@@ -897,7 +972,7 @@ class IndexCorrespondence:
             common_labels = intersect2d(src_index.values, dst_index.values)
             if mixed_depth:
                 # when mixed, on the 1D index we have to use loc_to_iloc with tuples
-                common_labels = list(_array2d_to_tuples(common_labels))
+                common_labels = list(array2d_to_tuples(common_labels))
             has_common = len(common_labels) > 0
         else:
             has_common = False

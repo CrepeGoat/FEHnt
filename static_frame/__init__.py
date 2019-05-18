@@ -22,6 +22,7 @@ from static_frame.core.display import DisplayConfig
 from static_frame.core.display import DisplayConfigs
 from static_frame.core.display import DisplayActive
 from static_frame.core.display import Display
+from static_frame.core.display import DisplayFormats
 
 from static_frame.core.type_blocks import TypeBlocks
 
@@ -30,13 +31,18 @@ from static_frame.core.index import IndexGO
 from static_frame.core.index import IndexDate
 from static_frame.core.index import IndexYearMonth
 from static_frame.core.index import IndexYear
+from static_frame.core.index import IndexMillisecond
+from static_frame.core.index import IndexSecond
+
+
 from static_frame.core.index import ILoc
 
 from static_frame.core.index_hierarchy import IndexLevel
 from static_frame.core.index_hierarchy import IndexLevelGO
 from static_frame.core.index_hierarchy import IndexHierarchy
 from static_frame.core.index_hierarchy import IndexHierarchyGO
-from static_frame.core.index_hierarchy import HLoc
+
+from static_frame.core.hloc import HLoc
 
 from static_frame.core.series import Series
 from static_frame.core.series import SeriesAssign
@@ -45,6 +51,6 @@ from static_frame.core.frame import Frame
 from static_frame.core.frame import FrameGO
 from static_frame.core.frame import FrameAssign
 
-__version__ = '0.3.1' # use -dev for new version in development
+__version__ = '0.3.5-dev' # use -dev for new version in development
 
 

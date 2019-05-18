@@ -47,7 +47,7 @@ class OutcomeCalculator:
         choice_starpool_probs = (self.event_details
                                  .pool_probs(session.prob_level)
                                  [sf.HLoc[:, stone_choice]]
-                                 .reindex_drop_level())
+                                 .reindex_drop_level(-1))
 
         choice_starpool_probs = (choice_starpool_probs
                                  / choice_starpool_probs.sum())
