@@ -8,7 +8,7 @@ def run():
         (StarPools._5_STAR_FOCUS, Colors.RED, 1),
         (StarPools._5_STAR_FOCUS, Colors.BLUE, 1),
         (StarPools._5_STAR_FOCUS, Colors.GREEN, 1),
-        #(StarPools._5_STAR_FOCUS, Colors.GRAY, 1),
+        (StarPools._5_STAR_FOCUS, Colors.GRAY, 1),
 
         (StarPools._5_STAR, Colors.RED, 19),
         (StarPools._5_STAR, Colors.BLUE, 15),
@@ -29,8 +29,7 @@ def run():
     )['count']
 
     target_pool_counts = sf.Frame.from_records([
-        (StarPools._5_STAR_FOCUS, Colors.BLUE, 1),
-        (StarPools._5_STAR_FOCUS, Colors.GREEN, 1),
+        (StarPools._5_STAR_FOCUS, Colors.RED, 1),
     ], columns=['star', 'color', 'count']).set_index_hierarchy(
         ('star', 'color'), drop=True
     )['count']
