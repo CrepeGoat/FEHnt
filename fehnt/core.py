@@ -21,10 +21,12 @@ class OutcomeCalculator:
         self.summoner = summoner
         self.callback = callback
 
-    def __len__(self):
-        return len(self.states)
+    def __iter__(self):
+        return self
 
     def __next__(self):
+        if len(self.states) == 0:
+            raise StopIteration
         return self.states.popitem(-1)
 
     def init_new_session(self, event, probability):
@@ -97,10 +99,9 @@ class OutcomeCalculator:
             EventState(no_of_orbs, 0, 0*self.summoner.targets), Fraction(1)
         )
 
-        while self:
-            self.callback("  no. of states:", len(self))
-
-            (event, session), prob = next(self)
+        for i, ((event, session), prob) in enumerate(self):
+            self.callback("  state no.:", i)
+            self.callback("  no. of states in queue:", len(self.states))
             self.callback('  orbs left:', event.orb_count)
 
             if not self.summoner.should_continue(event.targets_pulled):
