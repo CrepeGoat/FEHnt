@@ -16,9 +16,10 @@ class DefaultSortedDict(sc.SortedDict):
 
 
 class OutcomeCalculator:
-    def __init__(self, event_details, summoner):
+    def __init__(self, event_details, summoner, callback=print):
         self.event_details = event_details
         self.summoner = summoner
+        self.callback = callback
 
     def __len__(self):
         return len(self.states)
@@ -97,23 +98,23 @@ class OutcomeCalculator:
         )
 
         while self:
-            print("  no. of states:", len(self))
+            self.callback("  no. of states:", len(self))
 
             (event, session), prob = next(self)
-            print('  orbs left:', event.orb_count)
+            self.callback('  orbs left:', event.orb_count)
 
             if not self.summoner.should_continue(event.targets_pulled):
-                print('quit summoning event')
+                self.callback('quit summoning event')
                 self.push_outcome(event, prob)
                 continue
 
             if session.stone_counts.sum() == 0:
-                print('completed summoning session')
+                self.callback('completed summoning session')
                 self.init_new_session(event, prob)
                 continue
 
             if event.orb_count < stone_cost(session.stone_counts.sum()):
-                print('out of orbs')
+                self.callback('out of orbs')
                 self.push_outcome(event, prob)
                 continue
 
@@ -126,13 +127,13 @@ class OutcomeCalculator:
                 if session.stone_counts.sum() == summons_per_session:
                     raise SummonChoiceError('cannot quit session without summoning'
                                             ' at least one Hero')
-                print('left summoning session')
+                self.callback('left summoning session')
                 self.init_new_session(event, prob)
             else:
                 if session.stone_counts[stone_choice] == 0:
                     raise SummonChoiceError('cannot summon colors that are not'
                                             ' present')
-                print('chose to summon', stone_choice.name)
+                self.callback('chose to summon', stone_choice.name)
                 self.branch_event(event, session, prob, stone_choice)
 
         return self.outcomes
