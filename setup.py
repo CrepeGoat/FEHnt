@@ -11,6 +11,6 @@ setup(
     # Contents
     packages=['fehnt'],
     # Dependencies
-    install_requires=['pandas', 'sortedcontainers', 'static_frame==0.3.1'],
+    install_requires=['sortedcontainers', 'numpy'],
     #tests_requires=['pytest'],
 )

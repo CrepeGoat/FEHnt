@@ -5,7 +5,6 @@ from fractions import Fraction
 from functools import lru_cache
 from itertools import chain
 
-import numpy as np
 import static_frame as sf
 
 
