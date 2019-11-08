@@ -6,7 +6,7 @@ setup(
     # Metadata
     name='Fehnt',
     version='0.1',
-    description='FEH gotcha outcome probability calculator',
+    description='FEH gacha outcome probability calculator',
     author='CrepeGoat',
     # Contents
     packages=['fehnt'],
