@@ -3,7 +3,6 @@ from fehnt.core_defs import *
 from collections import namedtuple
 from fractions import Fraction
 from functools import lru_cache
-from itertools import chain
 
 import static_frame as sf
 
@@ -25,7 +24,7 @@ ResultState = namedtuple('ResultState', 'orb_count targets_pulled')
 
 def nCkarray(k_array):
     result = 1
-    for i, j in enumerate(chain(*(range(1, k+1) for k in k_array)), 1):
+    for i, j in enumerate((m for k in k_array for m in range(1, k+1)), 1):
         result = (result * i) // j
     return result
 
