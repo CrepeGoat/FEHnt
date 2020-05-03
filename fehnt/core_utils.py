@@ -45,3 +45,11 @@ stone_combinations.cache = sf.Frame.from_records([
     for j in range(summons_per_session+1-i)
     for k in range(summons_per_session+1-i-j)
 ], columns=[c for c in Colors])
+
+
+def make_pool_counts(pools):
+    return sf.Frame.from_records(
+        pools, columns=['star', 'color', 'count']
+    ).set_index_hierarchy(
+        ('star', 'color'), drop=True
+    )['count']
