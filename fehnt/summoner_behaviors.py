@@ -1,7 +1,6 @@
-from .core_defs import *
-
 import numpy as np
-import static_frame as sf
+
+from .core_defs import summons_per_session
 
 
 class SummonChoiceError(RuntimeError):

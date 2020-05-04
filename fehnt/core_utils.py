@@ -1,10 +1,8 @@
-from fehnt.core_defs import *
-
 from collections import namedtuple
-from fractions import Fraction
-from functools import lru_cache
 
 import static_frame as sf
+
+from fehnt.core_defs import Colors, summons_per_session
 
 
 EventState = namedtuple('EventState', 'orb_count dry_streak targets_pulled')

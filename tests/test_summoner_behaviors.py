@@ -1,6 +1,7 @@
 import pytest
 
 from fehnt.summoner_behaviors import *
+from fehnt.core_defs import Colors, StarPools
 from fehnt.core_utils import make_pool_counts
 
 

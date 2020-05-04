@@ -1,6 +1,7 @@
+import static_frame as sf
+
 from .core import *
 
-import static_frame as sf
 
 def run():
     # (based on Heroes of Gallia summoning event)

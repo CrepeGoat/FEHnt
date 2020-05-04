@@ -1,13 +1,13 @@
+from collections import defaultdict
+from fractions import Fraction
+
+import sortedcontainers as sc
+import static_frame as sf
+
 from .core_defs import *
 from .core_utils import *
 from .event_behaviors import *
 from .summoner_behaviors import *
-
-from collections import defaultdict
-from fractions import Fraction
-
-import static_frame as sf
-import sortedcontainers as sc
 
 
 class DefaultSortedDict(sc.SortedDict):
