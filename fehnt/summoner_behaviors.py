@@ -72,9 +72,8 @@ class ColorHuntSummoner(SummonerBehavior):
         if available_yield[optimal_choice] == 0:
             if stone_counts.sum() < SUMMONS_PER_SESSION:
                 return None
-            else:
-                # TODO choose color w/ lowest chance of resetting dry streak
-                return super().choose_stone(targets_pulled, stone_counts,
-                                            unit_probs)
-        else:
-            return optimal_choice
+            # TODO choose color w/ lowest chance of resetting dry streak
+            return super().choose_stone(targets_pulled, stone_counts,
+                                        unit_probs)
+
+        return optimal_choice
