@@ -47,11 +47,6 @@ class BlindFullSummoner(SummonerBehavior):
         # TODO make more sophisticated stone-choosing functions
         return self._targets_left(targets_pulled).any()
 
-    def choose_stone(self, targets_pulled, stone_counts, unit_probs):
-        """Choose an available stone in the given session."""
-        # TODO make more sophisticated stone-choosing functions
-        return super().choose_stone(targets_pulled, stone_counts, unit_probs)
-
 
 class ColorHuntSummoner(SummonerBehavior):
     """Summoner behavior for choosing stones of target colors only."""
