@@ -118,7 +118,7 @@ class OutcomeCalculator:
             self.callback("  no. of states in queue:", len(self.states))
             self.callback('  orbs left:', event.orb_count)
 
-            if not self.summoner.should_continue(event.targets_pulled):
+            if not self.summoner.should_start_new_session(event.targets_pulled):
                 self.callback('quit summoning event')
                 self.push_outcome(event, prob)
                 continue

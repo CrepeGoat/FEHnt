@@ -21,7 +21,7 @@ class SummonerBehavior:
                                                      fill_value=0)
         return self.targets - full_targets_pulled
 
-    def should_continue(self, targets_pulled):
+    def should_start_new_session(self, targets_pulled):
         """
         Check whether a new session should be started.
 
@@ -42,7 +42,7 @@ class SummonerBehavior:
 class BlindFullSummoner(SummonerBehavior):
     """Summoner behavior for choosing all stones."""
 
-    def should_continue(self, targets_pulled):
+    def should_start_new_session(self, targets_pulled):
         """Check whether a new session should be started."""
         # TODO make more sophisticated stone-choosing functions
         return self._targets_left(targets_pulled).any()
@@ -51,7 +51,7 @@ class BlindFullSummoner(SummonerBehavior):
 class ColorHuntSummoner(SummonerBehavior):
     """Summoner behavior for choosing stones of target colors only."""
 
-    def should_continue(self, targets_pulled):
+    def should_start_new_session(self, targets_pulled):
         """Check whether a new session should be started."""
         # TODO make more sophisticated stone-choosing functions
         return self._targets_left(targets_pulled).any()

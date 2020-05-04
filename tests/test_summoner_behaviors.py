@@ -136,5 +136,5 @@ def pool_counts():
         False,
     ),
 ])
-def test_should_continue(summoner, targets_pulled, expt_result):
-    assert summoner.should_continue(targets_pulled) == expt_result
+def test_should_start_new_session(summoner, targets_pulled, expt_result):
+    assert summoner.should_start_new_session(targets_pulled) == expt_result
