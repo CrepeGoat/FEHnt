@@ -29,7 +29,7 @@ class SummonerBehavior:
         """
         return True
 
-    def stone_choice_sequence(self, targets_pulled, stone_counts, unit_probs):
+    def stone_choice_sequence(self, targets_pulled, stones_count, unit_probs):
         """
         Generate characteristic stone color choice sequence.
 
@@ -72,7 +72,7 @@ class ColorHuntSummoner(SummonerBehavior):
         """Check whether a new session should be started."""
         return self._targets_left(targets_pulled).any()
 
-    def stone_choice_sequence(self, targets_pulled, stone_counts, unit_probs):
+    def stone_choice_sequence(self, targets_pulled, stones_count, unit_probs):
         """Generate characteristic stone color choice sequence."""
         targets_left = self.targets - targets_pulled.reindex(
             self.targets.index, fill_value=0
@@ -81,15 +81,15 @@ class ColorHuntSummoner(SummonerBehavior):
                                                          fill_value=0))
                       .iter_group_index(1)
                       .apply(np.sum))
-        available_yield = expt_yield * stone_counts.astype(bool)
-        optimal_choice = available_yield.index[available_yield.values.argmax()]
+        expt_yield = expt_yield.loc[expt_yield.values > 0]
 
-        if available_yield[optimal_choice] == 0:
-            if stone_counts.sum() < SUMMONS_PER_SESSION:
-                return []
-            # TODO choose color w/ lowest chance of resetting dry streak
-            return super().stone_choice_sequence(
-                targets_pulled, stone_counts, unit_probs
+        optimal_choice_sequence = tuple(expt_yield.index[np.argsort(
+            expt_yield.values, kind='stable'
+        )[::-1]])
+        if stones_count == SUMMONS_PER_SESSION:
+            optimal_choice_sequence = optimal_choice_sequence + tuple(
+                i for i in Colors if i not in optimal_choice_sequence
             )
+            assert len(optimal_choice_sequence) == len(Colors)
 
-        return [optimal_choice]
+        return optimal_choice_sequence

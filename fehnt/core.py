@@ -153,7 +153,7 @@ class OutcomeCalculator:
 
             stone_choice_sequence = self.summoner.stone_choice_sequence(
                 event.targets_pulled,
-                session.stone_counts,
+                session.stone_counts.sum(),
                 unit_probs=self.event_details.pool_probs(
                     probability_tier=session.prob_level
                 ) / self.event_details.pool_counts,
