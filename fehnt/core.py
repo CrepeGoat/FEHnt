@@ -29,6 +29,10 @@ class OutcomeCalculator:
         self.summoner = summoner
         self.callback = callback
 
+        # Lazily instantiated
+        self.states = None
+        self.outcomes = None
+
     def __iter__(self):
         """Iterate summoning states."""
         return self
