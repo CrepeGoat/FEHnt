@@ -43,12 +43,12 @@ class StarPools(enum.Enum):
         return self.value < other.value
 
 
-stone_costs = (None, 3, 4, 4, 4, 5)
+_STONE_COSTS = (None, 3, 4, 4, 4, 5)
 
 
 def stone_cost(stones_left):
     """Get orb cost of next summoning in current session."""
-    return stone_costs[int(stones_left)]  # TODO fix implicit cast to float
+    return _STONE_COSTS[int(stones_left)]  # TODO fix implicit cast to float
 
 
-summons_per_session = 5
+SUMMONS_PER_SESSION = 5

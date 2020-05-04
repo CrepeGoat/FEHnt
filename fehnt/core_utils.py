@@ -2,7 +2,7 @@ from collections import namedtuple
 
 import static_frame as sf
 
-from fehnt.core_defs import Colors, summons_per_session
+from fehnt.core_defs import Colors, SUMMONS_PER_SESSION
 
 
 EventState = namedtuple('EventState', 'orb_count dry_streak targets_pulled')
@@ -45,10 +45,10 @@ def stone_combinations(color_probs):
 
 
 stone_combinations.cache = sf.Frame.from_records([
-    (i, j, k, summons_per_session-i-j-k)
-    for i in range(summons_per_session+1)
-    for j in range(summons_per_session+1-i)
-    for k in range(summons_per_session+1-i-j)
+    (i, j, k, SUMMONS_PER_SESSION-i-j-k)
+    for i in range(SUMMONS_PER_SESSION+1)
+    for j in range(SUMMONS_PER_SESSION+1-i)
+    for k in range(SUMMONS_PER_SESSION+1-i-j)
 ], columns=[c for c in Colors])
 
 

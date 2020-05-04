@@ -1,6 +1,6 @@
 import numpy as np
 
-from .core_defs import summons_per_session
+from .core_defs import SUMMONS_PER_SESSION
 
 
 class SummonChoiceError(RuntimeError):
@@ -70,7 +70,7 @@ class ColorHuntSummoner(SummonerBehavior):
         optimal_choice = available_yield.index[available_yield.values.argmax()]
 
         if available_yield[optimal_choice] == 0:
-            if stone_counts.sum() < summons_per_session:
+            if stone_counts.sum() < SUMMONS_PER_SESSION:
                 return None
             else:
                 # TODO choose color w/ lowest chance of resetting dry streak

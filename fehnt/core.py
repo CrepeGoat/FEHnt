@@ -41,7 +41,7 @@ class OutcomeCalculator:
 
     def init_new_session(self, event, probability):
         """Add new summoning session after an existing session finishes."""
-        prob_tier = event.dry_streak // summons_per_session
+        prob_tier = event.dry_streak // SUMMONS_PER_SESSION
         color_probs = self.event_details.colorpool_probs(prob_tier)
 
         for stones, stones_prob in stone_combinations(color_probs):
@@ -139,7 +139,7 @@ class OutcomeCalculator:
                 self.event_details.pool_probs() / self.event_details.pool_counts
             )
             if stone_choice is None:
-                if session.stone_counts.sum() == summons_per_session:
+                if session.stone_counts.sum() == SUMMONS_PER_SESSION:
                     raise SummonChoiceError('cannot quit session without summoning'
                                             ' at least one Hero')
                 self.callback('left summoning session')
