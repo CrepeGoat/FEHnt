@@ -33,6 +33,23 @@ class OutcomeCalculator:
         self.states = None
         self.outcomes = None
 
+    def process_stone_choice(
+        self, event, session, prob, stone_choice
+    ):
+        """Calculate event states following after choosing a stone."""
+        if stone_choice is None:
+            if session.stone_counts.sum() == SUMMONS_PER_SESSION:
+                raise SummonChoiceError('cannot quit session without summoning'
+                                        ' at least one Hero')
+            self.callback('left summoning session')
+            self.init_new_session(event, prob)
+        else:
+            if session.stone_counts[stone_choice] == 0:
+                raise SummonChoiceError('cannot summon colors that are not'
+                                        ' present')
+            self.callback('chose to summon', stone_choice.name)
+            self.branch_event(event, session, prob, stone_choice)
+
     def init_new_session(self, event, probability):
         """Add new summoning session after an existing session finishes."""
         if not self.summoner.should_start_new_session(event.targets_pulled):
@@ -138,18 +155,7 @@ class OutcomeCalculator:
                     probability_tier=session.prob_level
                 ) / self.event_details.pool_counts,
             )
-            if stone_choice is None:
-                if session.stone_counts.sum() == SUMMONS_PER_SESSION:
-                    raise SummonChoiceError('cannot quit session without summoning'
-                                            ' at least one Hero')
-                self.callback('left summoning session')
-                self.init_new_session(event, prob)
-            else:
-                if session.stone_counts[stone_choice] == 0:
-                    raise SummonChoiceError('cannot summon colors that are not'
-                                            ' present')
-                self.callback('chose to summon', stone_choice.name)
-                self.branch_event(event, session, prob, stone_choice)
+            self.process_stone_choice(event, session, prob, stone_choice)
 
         return self.outcomes
 
