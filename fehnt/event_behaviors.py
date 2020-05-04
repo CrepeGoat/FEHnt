@@ -8,7 +8,10 @@ from fehnt.core_defs import StarPools
 
 
 class EventDetailsBase:
+    """Base class for event details classes."""
+
     def __init__(self, pool_counts, starpool_counts=None):
+        """Construct an instance."""
         self.pool_counts = pool_counts
         self._starpool_counts = (
             pool_counts.iter_group_index(0).apply(np.sum)
@@ -16,10 +19,12 @@ class EventDetailsBase:
         )
 
     def starpool_probs(self, probability_tier=0):
+        """Generate probabilities for star rating summon pools."""
         pass
 
     @lru_cache(maxsize=None)
     def pool_probs(self, probability_tier=0):
+        """Generate probabilities for summon pools."""
         starpool_unit_probs = (
             self.starpool_probs(probability_tier)
             / self._starpool_counts
@@ -30,6 +35,7 @@ class EventDetailsBase:
 
     @lru_cache(maxsize=None)
     def colorpool_probs(self, probability_tier=0):
+        """Generate probabilities for color summon pools."""
         return (self.pool_probs(probability_tier)
                 .iter_group_index(1)
                 .apply(np.sum))
@@ -37,8 +43,11 @@ class EventDetailsBase:
 
 # for standard summoning events
 class StandardEventDetails(EventDetailsBase):
+    """A representation of event behaviors in a standard summoning event."""
+
     @lru_cache(maxsize=None)
     def starpool_probs(self, probability_tier=0):
+        """Generate probabilities for star rating summon pools."""
         i = probability_tier
         return sf.Series.from_items([
             (StarPools._5_STAR_FOCUS, Fraction(12+i, 400)),
@@ -51,8 +60,11 @@ class StandardEventDetails(EventDetailsBase):
 
 
 class LegendaryEventDetails(EventDetailsBase):
+    """A representation of event behaviors in a legendary summoning event."""
+
     @lru_cache(maxsize=None)
     def starpool_probs(self, probability_tier=0):
+        """Generate probabilities for star rating summon pools."""
         i = probability_tier
         return sf.Series.from_items([
             (StarPools._5_STAR_FOCUS, Fraction(16+i, 200)),

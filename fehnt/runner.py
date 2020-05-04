@@ -4,6 +4,7 @@ from .core import *
 
 
 def run():
+    """Run calculations."""
     # (based on Heroes of Gallia summoning event)
     pool_counts = sf.Frame.from_records([
         (StarPools._5_STAR_FOCUS, Colors.RED, 1),
@@ -39,5 +40,5 @@ def run():
         event_details=StandardEventDetails(pool_counts),
         summoner=ColorHuntSummoner(target_pool_counts),
     )(no_of_orbs=10)
-    for state, prob in format_results(outcome_probs):
+    for state, prob in condense_results(outcome_probs):
         print("{}: {:%}".format(state, float(prob)))

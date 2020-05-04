@@ -11,25 +11,36 @@ from .summoner_behaviors import *
 
 
 class DefaultSortedDict(sc.SortedDict):
+    """A sorted dictionary that pre-populates empty entries with zeros."""
     def __missing__(self, key):
         return Fraction()
 
 
 class OutcomeCalculator:
+    """
+    An object that calculates summoning probabilities.
+
+    The core object of FEHnt.
+    """
+
     def __init__(self, event_details, summoner, callback=print):
+        """Construct an instance."""
         self.event_details = event_details
         self.summoner = summoner
         self.callback = callback
 
     def __iter__(self):
+        """Iterate summoning states."""
         return self
 
     def __next__(self):
+        """Get next summoning state."""
         if len(self.states) == 0:
             raise StopIteration
         return self.states.popitem(-1)
 
     def init_new_session(self, event, probability):
+        """Add new summoning session after an existing session finishes."""
         prob_tier = event.dry_streak // summons_per_session
         color_probs = self.event_details.colorpool_probs(prob_tier)
 
@@ -39,6 +50,7 @@ class OutcomeCalculator:
             )] += probability * stones_prob
 
     def branch_event(self, event, session, prob, stone_choice):
+        """Split session into all potential following sub-sessions."""
         stone_count_choice = (sf.Series([1], index=[stone_choice])
                               .reindex(session.stone_counts.index,
                                        fill_value=0))
@@ -88,10 +100,12 @@ class OutcomeCalculator:
                 )
 
     def push_outcome(self, event, probability):
+        """Add a given probabilistic outcome to the recorded results."""
         result = ResultState(event.orb_count, event.targets_pulled)
         self.outcomes[result] += probability
 
     def __call__(self, no_of_orbs):
+        """Calculate the summoning probabilities."""
         self.states = DefaultSortedDict()
         self.outcomes = defaultdict(Fraction, [])
 
@@ -140,7 +154,8 @@ class OutcomeCalculator:
         return self.outcomes
 
 
-def format_results(results):
+def condense_results(results):
+    """Reduces results to probabilities of obtaining a given set of units."""
     # TODO
     yield_probs = defaultdict(Fraction, [])
     for state, prob in results.items():

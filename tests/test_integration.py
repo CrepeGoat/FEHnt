@@ -34,7 +34,7 @@ def test_run():
         (StarPools._5_STAR_FOCUS, Colors.RED, 1),
     ])
 
-    outcome_probs = dict(format_results(OutcomeCalculator(
+    outcome_probs = dict(condense_results(OutcomeCalculator(
         event_details=StandardEventDetails(pool_counts),
         summoner=ColorHuntSummoner(target_pool_counts),
     )(no_of_orbs=10)))
