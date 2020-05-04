@@ -20,7 +20,7 @@ class EventDetailsBase:
 
     def starpool_probs(self, probability_tier=0):
         """Generate probabilities for star rating summon pools."""
-        pass
+        raise NotImplementedError
 
     @lru_cache(maxsize=None)
     def pool_probs(self, probability_tier=0):
