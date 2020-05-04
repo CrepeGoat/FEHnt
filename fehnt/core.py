@@ -33,22 +33,25 @@ class OutcomeCalculator:
         self.states = None
         self.outcomes = None
 
-    def process_stone_choice(
-        self, event, session, prob, stone_choice
+    def process_stone_choice_sequence(
+        self, event, session, prob, stone_choice_sequence
     ):
-        """Calculate event states following after choosing a stone."""
-        if stone_choice is None:
-            if session.stone_counts.sum() == SUMMONS_PER_SESSION:
-                raise SummonChoiceError('cannot quit session without summoning'
-                                        ' at least one Hero')
-            self.callback('left summoning session')
-            self.init_new_session(event, prob)
-        else:
-            if session.stone_counts[stone_choice] == 0:
-                raise SummonChoiceError('cannot summon colors that are not'
-                                        ' present')
-            self.callback('chose to summon', stone_choice.name)
-            self.branch_event(event, session, prob, stone_choice)
+        """
+        Calculate event states following a single summon characterized by stone
+        choice sequence.
+        """
+        for stone_choice in stone_choice_sequence:
+            if session.stone_counts[stone_choice] > 0:
+                self.callback('chose to summon', stone_choice.name)
+                self.branch_event(event, session, prob, stone_choice)
+                return
+
+        if session.stone_counts.sum() == SUMMONS_PER_SESSION:
+            raise SummonChoiceError(
+                'cannot quit session without summoning at least one Hero'
+            )
+        self.callback('left summoning session')
+        self.init_new_session(event, prob)
 
     def init_new_session(self, event, probability):
         """Add new summoning session after an existing session finishes."""
@@ -148,14 +151,16 @@ class OutcomeCalculator:
                 self.push_outcome(event, prob)
                 continue
 
-            stone_choice = self.summoner.choose_stone(
+            stone_choice_sequence = self.summoner.stone_choice_sequence(
                 event.targets_pulled,
                 session.stone_counts,
                 unit_probs=self.event_details.pool_probs(
                     probability_tier=session.prob_level
                 ) / self.event_details.pool_counts,
             )
-            self.process_stone_choice(event, session, prob, stone_choice)
+            self.process_stone_choice_sequence(
+                event, session, prob, stone_choice_sequence
+            )
 
         return self.outcomes
 
