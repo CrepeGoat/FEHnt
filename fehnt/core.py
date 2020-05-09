@@ -55,11 +55,10 @@ class OutcomeCalculator:
 
     def branch_event(self, event, session, prob, stone_choice):
         """Split session into all potential following sub-sessions."""
-        stone_count_choice = (sf.Series([1], index=[stone_choice])
-                              .reindex(session.stone_counts.index,
-                                       fill_value=0))
         new_session = session._replace(
-            stone_counts=session.stone_counts - stone_count_choice
+            stone_counts=session.stone_counts.assign[stone_choice](
+                session.stone_counts[stone_choice] - 1
+            )
         )
         orb_count = event.orb_count - stone_cost(session.stone_counts.sum())
 
