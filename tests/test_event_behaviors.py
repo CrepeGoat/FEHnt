@@ -1,6 +1,7 @@
 import pytest
 
 from fehnt.event_behaviors import *
+from fehnt.core_defs import Colors, StarPools
 
 
 @pytest.fixture

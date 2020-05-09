@@ -1,6 +1,7 @@
 import pytest
 
 from fehnt.summoner_behaviors import *
+from fehnt.core_defs import Colors, StarPools
 from fehnt.core_utils import make_pool_counts
 
 
@@ -135,5 +136,5 @@ def pool_counts():
         False,
     ),
 ])
-def test_should_continue(summoner, targets_pulled, expt_result):
-    assert summoner.should_continue(targets_pulled) == expt_result
+def test_should_start_new_session(summoner, targets_pulled, expt_result):
+    assert summoner.should_start_new_session(targets_pulled) == expt_result
