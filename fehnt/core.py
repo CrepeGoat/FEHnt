@@ -146,4 +146,4 @@ def format_results(results):
     for state, prob in results.items():
         yield_probs[state.targets_pulled] += prob
 
-    return [(k, float(v)) for k, v in yield_probs.items()]
+    return list(yield_probs.items())
