@@ -10,7 +10,20 @@ SessionState = namedtuple('SessionState', 'prob_level stone_counts')
 
 
 class StateStruct(namedtuple('_', 'event session')):
-    """Represents a unique state in summoning."""
+    """
+    Represents a unique state in summoning.
+
+    This class also provides basic ordering among other class instances,
+    s.t. if all elements are processed in order, any/all identical states will
+    be aggregated before either is processed.
+
+    This is achieved under two rules:
+    - a high-orb state yields a low-orb state after processing
+      -> high-orb states are "greater"
+    - a low-stone session requires fewer orbs to process, and thus processes
+      down to higher-orb states than high-stone states
+      -> low-stone states are "greater"
+    """
 
     def _obj_func(self):
         """Generate object representing a total ordering among states."""
