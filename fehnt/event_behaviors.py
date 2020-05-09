@@ -18,12 +18,12 @@ class EventDetailsBase:
             if starpool_counts is None else starpool_counts
         )
 
-    def starpool_probs(self, probability_tier=0):
+    def starpool_probs(self, probability_tier):
         """Generate probabilities for star rating summon pools."""
         raise NotImplementedError
 
     @lru_cache(maxsize=None)
-    def pool_probs(self, probability_tier=0):
+    def pool_probs(self, probability_tier):
         """Generate probabilities for summon pools."""
         starpool_unit_probs = (
             self.starpool_probs(probability_tier)
@@ -34,7 +34,7 @@ class EventDetailsBase:
         ) * self.pool_counts
 
     @lru_cache(maxsize=None)
-    def colorpool_probs(self, probability_tier=0):
+    def colorpool_probs(self, probability_tier):
         """Generate probabilities for color summon pools."""
         return (self.pool_probs(probability_tier)
                 .iter_group_index(1)
@@ -46,7 +46,7 @@ class StandardEventDetails(EventDetailsBase):
     """A representation of event behaviors in a standard summoning event."""
 
     @lru_cache(maxsize=None)
-    def starpool_probs(self, probability_tier=0):
+    def starpool_probs(self, probability_tier):
         """Generate probabilities for star rating summon pools."""
         i = probability_tier
         return sf.Series.from_items([
@@ -63,7 +63,7 @@ class LegendaryEventDetails(EventDetailsBase):
     """A representation of event behaviors in a legendary summoning event."""
 
     @lru_cache(maxsize=None)
-    def starpool_probs(self, probability_tier=0):
+    def starpool_probs(self, probability_tier):
         """Generate probabilities for star rating summon pools."""
         i = probability_tier
         return sf.Series.from_items([

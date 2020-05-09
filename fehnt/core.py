@@ -140,7 +140,9 @@ class OutcomeCalculator:
             stone_choice = self.summoner.choose_stone(
                 event.targets_pulled,
                 session.stone_counts,
-                self.event_details.pool_probs() / self.event_details.pool_counts
+                unit_probs=self.event_details.pool_probs(
+                    probability_tier=session.prob_level
+                ) / self.event_details.pool_counts,
             )
             if stone_choice is None:
                 if session.stone_counts.sum() == SUMMONS_PER_SESSION:
