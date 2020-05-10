@@ -41,12 +41,36 @@ class OutcomeCalculator:
         choice sequence.
         """
         for stone_choice in stone_choice_sequence:
-            if session.stone_counts[stone_choice] > 0:
-                self.callback('chose to summon', stone_choice.name)
-                self.branch_event(event, session, prob, stone_choice)
-                return
+            if not session.stone_presences[stone_choice]:
+                continue
 
-        if session.stone_counts.sum() == SUMMONS_PER_SESSION:
+            self.callback('chose to summon', stone_choice.name)
+
+            choice_absent_presences = (
+                session.stone_presences.assign[stone_choice](False)
+            )
+            if choice_absent_presences.any():
+                alt_session = session._replace(
+                    stone_presences=choice_absent_presences
+                )
+
+                color_probs = self.event_details.colorpool_probs(
+                    session.prob_level
+                )
+                choice_color_absent_prob = (
+                    (color_probs * choice_absent_presences).sum()
+                    / (color_probs * session.stone_presences).sum()
+                ) ** session.stones_count
+                alt_prob = prob * choice_color_absent_prob
+
+                self.states[StateStruct(event, alt_session)] += alt_prob
+
+                prob *= 1 - choice_color_absent_prob
+
+            self.branch_event(event, session, prob, stone_choice)
+            return
+
+        if session.stones_count == SUMMONS_PER_SESSION:
             raise SummonChoiceError(
                 'cannot quit session without summoning at least one Hero'
             )
@@ -60,22 +84,18 @@ class OutcomeCalculator:
             self.push_outcome(event, probability)
             return
 
-        prob_tier = event.dry_streak // SUMMONS_PER_SESSION
-        color_probs = self.event_details.colorpool_probs(prob_tier)
-
-        for stones, stones_prob in stone_combinations(color_probs):
-            self.states[StateStruct(
-                event, SessionState(prob_tier, stones)
-            )] += probability * stones_prob
+        self.states[StateStruct(event, SessionState(
+            prob_level=event.dry_streak // SUMMONS_PER_SESSION,
+            stones_count=SUMMONS_PER_SESSION,
+            stone_presences=sf.Series(True, index=tuple(Colors)),
+        ))] += probability
 
     def branch_event(self, event, session, prob, stone_choice):
         """Split session into all potential following sub-sessions."""
         new_session = session._replace(
-            stone_counts=session.stone_counts.assign[stone_choice](
-                session.stone_counts[stone_choice] - 1
-            )
+            stones_count=session.stones_count - 1
         )
-        orb_count = event.orb_count - stone_cost(session.stone_counts.sum())
+        orb_count = event.orb_count - stone_cost(session.stones_count)
 
         choice_starpool_probs = (self.event_details
                                  .pool_probs(session.prob_level)
@@ -141,19 +161,19 @@ class OutcomeCalculator:
             self.callback("  no. of states in queue:", len(self.states))
             self.callback('  orbs left:', event.orb_count)
 
-            if session.stone_counts.sum() == 0:
+            if session.stones_count == 0:
                 self.callback('completed summoning session')
                 self.init_new_session(event, prob)
                 continue
 
-            if event.orb_count < stone_cost(session.stone_counts.sum()):
+            if event.orb_count < stone_cost(session.stones_count):
                 self.callback('out of orbs')
                 self.push_outcome(event, prob)
                 continue
 
             stone_choice_sequence = self.summoner.stone_choice_sequence(
                 event.targets_pulled,
-                session.stone_counts.sum(),
+                session.stones_count,
                 unit_probs=self.event_details.pool_probs(
                     probability_tier=session.prob_level
                 ) / self.event_details.pool_counts,

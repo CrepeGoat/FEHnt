@@ -6,7 +6,10 @@ from fehnt.core_defs import Colors, stone_cost, SUMMONS_PER_SESSION
 
 
 EventState = namedtuple('EventState', 'orb_count dry_streak targets_pulled')
-SessionState = namedtuple('SessionState', 'prob_level stone_counts')
+SessionState = namedtuple(
+    'SessionState',
+    'prob_level stones_count stone_presences'
+)
 
 
 class StateStruct(namedtuple('_', 'event session')):
@@ -24,7 +27,7 @@ class StateStruct(namedtuple('_', 'event session')):
     def _obj_func(self):
         """Generate object representing a total ordering among states."""
         return self.event.orb_count - (
-            stone_cost(self.session.stone_counts.sum()) or 1
+            stone_cost(self.session.stones_count) or 1
         )
 
     def __lt__(self, other):
