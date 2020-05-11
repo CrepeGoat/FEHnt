@@ -45,15 +45,15 @@ def nCkarray(k_array):
     return result
 
 
-def n_nomial_prob(counts, probs):
-    """Calculate probability of a result from an n-nomial distribution."""
+def multinomial_prob(counts, probs):
+    """Calculate probability of a result from an multinomial distribution."""
     return nCkarray(counts.values) * (probs ** counts).prod()
 
 
 # @lru_cache(maxsize=None)
 def stone_combinations(color_probs):
     """Iterate through all possible stone combinations in a given session."""
-    return ((s, n_nomial_prob(s, color_probs))
+    return ((s, multinomial_prob(s, color_probs))
             for s in stone_combinations.cache.iter_series(axis=1))
 
 

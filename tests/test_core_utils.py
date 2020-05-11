@@ -40,14 +40,14 @@ def test_nCkarray(k_array, expt_result):
 
     ((1, 0, 1), (1, 1, 1), Fraction(2, 9)),
 ])
-def test_n_nomial_prob(counts, prob_ratios, expt_result):
+def test_multinomial_prob(counts, prob_ratios, expt_result):
     denom = sum(prob_ratios)
     probs = tuple(Fraction(i, denom) for i in prob_ratios)
 
     counts = sf.Series(counts)
     probs = sf.Series(probs)
 
-    assert n_nomial_prob(counts, probs) == expt_result
+    assert multinomial_prob(counts, probs) == expt_result
 
 
 if __name__ == '__main__':
