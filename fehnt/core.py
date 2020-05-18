@@ -45,6 +45,11 @@ class OutcomeCalculator:
 
     def init_new_session(self, event, probability):
         """Add new summoning session after an existing session finishes."""
+        if not self.summoner.should_start_new_session(event.targets_pulled):
+            self.callback('quit summoning event')
+            self.push_outcome(event, probability)
+            return
+
         prob_tier = event.dry_streak // SUMMONS_PER_SESSION
         color_probs = self.event_details.colorpool_probs(prob_tier)
 
@@ -120,11 +125,6 @@ class OutcomeCalculator:
             self.callback("  state no.:", i)
             self.callback("  no. of states in queue:", len(self.states))
             self.callback('  orbs left:', event.orb_count)
-
-            if not self.summoner.should_start_new_session(event.targets_pulled):
-                self.callback('quit summoning event')
-                self.push_outcome(event, prob)
-                continue
 
             if session.stone_counts.sum() == 0:
                 self.callback('completed summoning session')
