@@ -10,7 +10,20 @@ SessionState = namedtuple('SessionState', 'prob_level stone_counts')
 
 
 class StateStruct(namedtuple('_', 'event session')):
-    """Represents a unique state in summoning."""
+    """
+    Represents a unique state in summoning.
+
+    This class also provides basic ordering among other class instances,
+    s.t. if all elements are processed in order, any/all identical states will
+    be aggregated before either is processed.
+
+    This is achieved under two rules:
+    - a high-orb state yields a low-orb state after processing
+      -> high-orb states are "greater"
+    - a low-stone session requires fewer orbs to process, and thus processes
+      down to higher-orb states than high-stone states
+      -> low-stone states are "greater"
+    """
 
     def _obj_func(self):
         """Generate object representing a total ordering among states."""
@@ -32,15 +45,15 @@ def nCkarray(k_array):
     return result
 
 
-def n_nomial_prob(counts, probs):
-    """Calculate probability of a result from an n-nomial distribution."""
+def multinomial_prob(counts, probs):
+    """Calculate probability of a result from an multinomial distribution."""
     return nCkarray(counts.values) * (probs ** counts).prod()
 
 
 # @lru_cache(maxsize=None)
 def stone_combinations(color_probs):
     """Iterate through all possible stone combinations in a given session."""
-    return ((s, n_nomial_prob(s, color_probs))
+    return ((s, multinomial_prob(s, color_probs))
             for s in stone_combinations.cache.iter_series(axis=1))
 
 
