@@ -6,10 +6,27 @@ from fehnt.core_defs import Colors, stone_cost, SUMMONS_PER_SESSION
 
 
 EventState = namedtuple('EventState', 'orb_count dry_streak targets_pulled')
-SessionState = namedtuple(
-    'SessionState',
-    'prob_level stones_count stone_presences'
-)
+
+
+class SessionState(
+    namedtuple('_', 'prob_level stone_summons stone_presences')
+):
+    def prob(self, event_details):
+        """
+        Calculate the probability of a session with the given stone
+        limitations.
+        """
+        color_count_probs = event_details.color_count_probs(self.prob_level)
+        return color_count_probs.loc[
+            (
+                color_count_probs.index >= tuple(self.stone_summons.values)
+            ).all(axis=1)
+            & (
+                color_count_probs.index * tuple(1 - self.stone_presences.values)
+                <= tuple(self.stone_summons.values)
+            ).all(axis=1)
+        ].sum()
+
 
 
 class StateStruct(namedtuple('_', 'event session')):
@@ -26,8 +43,14 @@ class StateStruct(namedtuple('_', 'event session')):
 
     def _obj_func(self):
         """Generate object representing a total ordering among states."""
-        return self.event.orb_count - (
-            stone_cost(self.session.stones_count) or 1
+        if self.session.stone_summons.sum() == SUMMONS_PER_SESSION:
+            next_stone_cost = 1  # hack to make the comparison work
+        else:
+            next_stone_cost = stone_cost(self.session.stone_summons.sum())
+
+        return (
+            self.event.orb_count - next_stone_cost,
+            self.session.stone_presences.sum(),
         )
 
     def __lt__(self, other):
@@ -51,19 +74,12 @@ def multinomial_prob(counts, probs):
     return nCkarray(*counts.values) * (probs ** counts).prod()
 
 
-# @lru_cache(maxsize=None)
-def stone_combinations(color_probs):
-    """Iterate through all possible stone combinations in a given session."""
-    return ((s, multinomial_prob(s, color_probs))
-            for s in stone_combinations.cache.iter_series(axis=1))
-
-
-stone_combinations.cache = sf.Frame.from_records([
+stone_combinations = sf.Frame.from_records([
     (i, j, k, SUMMONS_PER_SESSION-i-j-k)
     for i in range(SUMMONS_PER_SESSION+1)
     for j in range(SUMMONS_PER_SESSION+1-i)
     for k in range(SUMMONS_PER_SESSION+1-i-j)
-], columns=[c for c in Colors])
+], columns=tuple(Colors))
 
 
 def make_pool_counts(*pools):

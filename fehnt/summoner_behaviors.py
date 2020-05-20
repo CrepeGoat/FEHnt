@@ -1,6 +1,6 @@
 import numpy as np
 
-from .core_defs import Colors, SUMMONS_PER_SESSION
+from .core_defs import Colors
 
 
 class SummonChoiceError(RuntimeError):
@@ -29,7 +29,7 @@ class SummonerBehavior:
         """
         return True
 
-    def stone_choice_sequence(self, targets_pulled, stones_count, unit_probs):
+    def stone_choice_sequence(self, targets_pulled, stones_pulled, unit_probs):
         """
         Generate characteristic stone color choice sequence.
 
@@ -72,7 +72,7 @@ class ColorHuntSummoner(SummonerBehavior):
         """Check whether a new session should be started."""
         return self._targets_left(targets_pulled).any()
 
-    def stone_choice_sequence(self, targets_pulled, stones_count, unit_probs):
+    def stone_choice_sequence(self, targets_pulled, stones_pulled, unit_probs):
         """Generate characteristic stone color choice sequence."""
         targets_left = self.targets - targets_pulled.reindex(
             self.targets.index, fill_value=0
@@ -86,7 +86,7 @@ class ColorHuntSummoner(SummonerBehavior):
         optimal_choice_sequence = tuple(expt_yield.index[np.argsort(
             expt_yield.values, kind='stable'
         )[::-1]])
-        if stones_count == SUMMONS_PER_SESSION:
+        if stones_pulled == 0:
             optimal_choice_sequence = optimal_choice_sequence + tuple(
                 i for i in Colors if i not in optimal_choice_sequence
             )
