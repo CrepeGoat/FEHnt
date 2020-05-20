@@ -35,17 +35,17 @@ class StateStruct(namedtuple('_', 'event session')):
 ResultState = namedtuple('ResultState', 'orb_count targets_pulled')
 
 
-def nCkarray(k_array):
+def nCkarray(*k_values):
     """Calculate nCk on a series of k values."""
     result = 1
-    for i, j in enumerate((m for k in k_array for m in range(1, k+1)), 1):
+    for i, j in enumerate((m for k in k_values for m in range(1, k+1)), 1):
         result = (result * i) // j
     return result
 
 
 def multinomial_prob(counts, probs):
     """Calculate probability of a result from an multinomial distribution."""
-    return nCkarray(counts.values) * (probs ** counts).prod()
+    return nCkarray(*counts.values) * (probs ** counts).prod()
 
 
 # @lru_cache(maxsize=None)
@@ -63,7 +63,7 @@ stone_combinations.cache = sf.Frame.from_records([
 ], columns=[c for c in Colors])
 
 
-def make_pool_counts(pools):
+def make_pool_counts(*pools):
     """Arrange pool counts into a static frame."""
     return sf.Frame.from_records(
         pools, columns=['star', 'color', 'count']
