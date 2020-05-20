@@ -2,7 +2,7 @@ from collections import namedtuple
 
 import static_frame as sf
 
-from fehnt.core_defs import Colors, SUMMONS_PER_SESSION
+from fehnt.core_defs import Colors, stone_cost, SUMMONS_PER_SESSION
 
 
 EventState = namedtuple('EventState', 'orb_count dry_streak targets_pulled')
@@ -14,20 +14,18 @@ class StateStruct(namedtuple('_', 'event session')):
     Represents a unique state in summoning.
 
     This class also provides basic ordering among other class instances,
-    s.t. if all elements are processed in order, any/all identical states will
-    be aggregated before either is processed.
+    s.t. if all elements are processed in order, like-states are aggregated
+    first s.t. no identical states are re-processed multiple times.
 
-    This is achieved under two rules:
-    - a high-orb state yields a low-orb state after processing
-      -> high-orb states are "greater"
-    - a low-stone session requires fewer orbs to process, and thus processes
-      down to higher-orb states than high-stone states
-      -> low-stone states are "greater"
+    This is achieved by ordering states by the orb count *of its next post-
+    processing state*.
     """
 
     def _obj_func(self):
         """Generate object representing a total ordering among states."""
-        return (self.event.orb_count, -self.session.stone_counts.sum())
+        return self.event.orb_count - (
+            stone_cost(self.session.stone_counts.sum()) or 1
+        )
 
     def __lt__(self, other):
         """Order states by summoning resources available."""
