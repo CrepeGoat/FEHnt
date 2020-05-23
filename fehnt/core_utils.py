@@ -4,7 +4,7 @@ import static_frame as sf
 
 from fehnt.core_defs import Colors, stone_cost, SUMMONS_PER_SESSION
 
-
+ColorTuple = namedtuple('EventState', [c.name for c in Colors])
 EventState = namedtuple('EventState', 'orb_count dry_streak targets_pulled')
 
 
@@ -26,7 +26,6 @@ class SessionState(
                 <= tuple(self.stone_summons.values)
             ).all(axis=1)
         ].sum()
-
 
 
 class StateStruct(namedtuple('_', 'event session')):
@@ -74,12 +73,12 @@ def multinomial_prob(counts, probs):
     return nCkarray(*counts.values) * (probs ** counts).prod()
 
 
-stone_combinations = sf.Frame.from_records([
-    (i, j, k, SUMMONS_PER_SESSION-i-j-k)
+stone_combinations = [
+    ColorTuple(i, j, k, SUMMONS_PER_SESSION-i-j-k)
     for i in range(SUMMONS_PER_SESSION+1)
     for j in range(SUMMONS_PER_SESSION+1-i)
     for k in range(SUMMONS_PER_SESSION+1-i-j)
-], columns=tuple(Colors))
+]
 
 
 def make_pool_counts(*pools):
