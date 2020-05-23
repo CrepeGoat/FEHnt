@@ -19,15 +19,15 @@ class EventDetailsBase:
             if starpool_counts is None else starpool_counts
         )
 
-    def starpool_probs(self, probability_tier):
+    def starpool_probs(self, prob_tier):
         """Generate probabilities for star rating summon pools."""
         raise NotImplementedError
 
     @lru_cache(maxsize=None)
-    def pool_probs(self, probability_tier):
+    def pool_probs(self, prob_tier):
         """Generate probabilities for summon pools."""
         starpool_unit_probs = (
-            self.starpool_probs(probability_tier)
+            self.starpool_probs(prob_tier)
             / self._starpool_counts
         )
         return starpool_unit_probs.broadcast_index_to(
@@ -35,16 +35,16 @@ class EventDetailsBase:
         ) * self.pool_counts
 
     @lru_cache(maxsize=None)
-    def colorpool_probs(self, probability_tier):
+    def colorpool_probs(self, prob_tier):
         """Generate probabilities for color summon pools."""
-        return (self.pool_probs(probability_tier)
+        return (self.pool_probs(prob_tier)
                 .iter_group_index(1)
                 .apply(np.sum))
 
     @lru_cache(maxsize=None)
-    def color_count_probs(self, probability_tier):
+    def color_count_probs(self, prob_tier):
         """Generate probabilities for number of session colors present."""
-        color_probs = self.colorpool_probs(probability_tier)
+        color_probs = self.colorpool_probs(prob_tier)
         counts = stone_combinations
         probs = sf.Series([
             multinomial_prob(stone_counts, color_probs)
@@ -59,9 +59,9 @@ class EventDetailsBase:
         )
 
     @lru_cache(maxsize=None)
-    def min_color_count_probs(self, probability_tier):
+    def min_color_count_probs(self, prob_tier):
         """Generate probabilities for minimum session colors present."""
-        counts_table = self.color_count_probs(probability_tier)
+        counts_table = self.color_count_probs(prob_tier)
         min_counts_seq = [
             (i, j, k, l)
             for i in range(SUMMONS_PER_SESSION+1)
@@ -86,9 +86,9 @@ class StandardEventDetails(EventDetailsBase):
     """A representation of event behaviors in a standard summoning event."""
 
     @lru_cache(maxsize=None)
-    def starpool_probs(self, probability_tier):
+    def starpool_probs(self, prob_tier):
         """Generate probabilities for star rating summon pools."""
-        i = probability_tier
+        i = prob_tier
         return sf.Series.from_items([
             (StarPools._5_STAR_FOCUS, Fraction(12+i, 400)),
             (StarPools._5_STAR, Fraction(12+i, 400)),
@@ -103,9 +103,9 @@ class LegendaryEventDetails(EventDetailsBase):
     """A representation of event behaviors in a legendary summoning event."""
 
     @lru_cache(maxsize=None)
-    def starpool_probs(self, probability_tier):
+    def starpool_probs(self, prob_tier):
         """Generate probabilities for star rating summon pools."""
-        i = probability_tier
+        i = prob_tier
         return sf.Series.from_items([
             (StarPools._5_STAR_FOCUS, Fraction(16+i, 200)),
             (StarPools._4_STAR, (Fraction(58, 100)

@@ -83,7 +83,7 @@ class OutcomeCalculator:
             return
 
         self.states[StateStruct(event, SessionState(
-            prob_level=event.dry_streak // SUMMONS_PER_SESSION,
+            prob_tier=event.dry_streak // SUMMONS_PER_SESSION,
             stone_summons=sf.Series(0, index=tuple(Colors)),
             stone_presences=sf.Series(True, index=tuple(Colors)),
         ))] += probability
@@ -93,7 +93,7 @@ class OutcomeCalculator:
         orb_count = event.orb_count - stone_cost(session.stone_summons.sum()-1)
 
         choice_starpool_probs = (self.event_details
-                                 .pool_probs(session.prob_level)
+                                 .pool_probs(session.prob_tier)
                                  [sf.HLoc[:, stone_choice]]
                                  .reindex_drop_level(-1))
 
@@ -170,7 +170,7 @@ class OutcomeCalculator:
                 event.targets_pulled,
                 session.stone_summons.sum(),
                 unit_probs=self.event_details.pool_probs(
-                    probability_tier=session.prob_level
+                    prob_tier=session.prob_tier
                 ) / self.event_details.pool_counts,
             )
             self.process_stone_choice_sequence(
