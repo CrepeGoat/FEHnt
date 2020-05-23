@@ -7,25 +7,25 @@ from fehnt.core_defs import Colors, StarPools
 @pytest.fixture
 def standard_event_details():
     pool_data = [
-        (StarPools._5_STAR_FOCUS, Colors.RED, 1),
-        (StarPools._5_STAR_FOCUS, Colors.BLUE, 1),
-        (StarPools._5_STAR_FOCUS, Colors.GREEN, 1),
-        (StarPools._5_STAR_FOCUS, Colors.GRAY, 1),
+        (StarPools.x5_STAR_FOCUS, Colors.RED, 1),
+        (StarPools.x5_STAR_FOCUS, Colors.BLUE, 1),
+        (StarPools.x5_STAR_FOCUS, Colors.GREEN, 1),
+        (StarPools.x5_STAR_FOCUS, Colors.GRAY, 1),
 
-        (StarPools._5_STAR, Colors.RED, 19),
-        (StarPools._5_STAR, Colors.BLUE, 15),
-        (StarPools._5_STAR, Colors.GREEN, 15),
-        (StarPools._5_STAR, Colors.GRAY, 8),
+        (StarPools.x5_STAR, Colors.RED, 19),
+        (StarPools.x5_STAR, Colors.BLUE, 15),
+        (StarPools.x5_STAR, Colors.GREEN, 15),
+        (StarPools.x5_STAR, Colors.GRAY, 8),
 
-        (StarPools._4_STAR, Colors.RED, 32),
-        (StarPools._4_STAR, Colors.BLUE, 30),
-        (StarPools._4_STAR, Colors.GREEN, 20),
-        (StarPools._4_STAR, Colors.GRAY, 28),
+        (StarPools.x4_STAR, Colors.RED, 32),
+        (StarPools.x4_STAR, Colors.BLUE, 30),
+        (StarPools.x4_STAR, Colors.GREEN, 20),
+        (StarPools.x4_STAR, Colors.GRAY, 28),
 
-        (StarPools._3_STAR, Colors.RED, 32),
-        (StarPools._3_STAR, Colors.BLUE, 29),
-        (StarPools._3_STAR, Colors.GREEN, 19),
-        (StarPools._3_STAR, Colors.GRAY, 28),
+        (StarPools.x3_STAR, Colors.RED, 32),
+        (StarPools.x3_STAR, Colors.BLUE, 29),
+        (StarPools.x3_STAR, Colors.GREEN, 19),
+        (StarPools.x3_STAR, Colors.GRAY, 28),
     ]
     pool_counts = (
         sf.Frame

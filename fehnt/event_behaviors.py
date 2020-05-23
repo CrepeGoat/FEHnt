@@ -90,11 +90,11 @@ class StandardEventDetails(EventDetailsBase):
         """Generate probabilities for star rating summon pools."""
         i = prob_tier
         return sf.Series.from_items([
-            (StarPools._5_STAR_FOCUS, Fraction(12+i, 400)),
-            (StarPools._5_STAR, Fraction(12+i, 400)),
-            (StarPools._4_STAR, (Fraction(58, 100)
+            (StarPools.x5_STAR_FOCUS, Fraction(12+i, 400)),
+            (StarPools.x5_STAR, Fraction(12+i, 400)),
+            (StarPools.x4_STAR, (Fraction(58, 100)
                                  * Fraction(200-(12+i), 200-12))),
-            (StarPools._3_STAR, (Fraction(36, 100)
+            (StarPools.x3_STAR, (Fraction(36, 100)
                                  * Fraction(200-(12+i), 200-12))),
         ])
 
@@ -107,9 +107,9 @@ class LegendaryEventDetails(EventDetailsBase):
         """Generate probabilities for star rating summon pools."""
         i = prob_tier
         return sf.Series.from_items([
-            (StarPools._5_STAR_FOCUS, Fraction(16+i, 200)),
-            (StarPools._4_STAR, (Fraction(58, 100)
+            (StarPools.x5_STAR_FOCUS, Fraction(16+i, 200)),
+            (StarPools.x4_STAR, (Fraction(58, 100)
                                  * Fraction(200-(16+i), 200-16))),
-            (StarPools._3_STAR, (Fraction(34, 100)
+            (StarPools.x3_STAR, (Fraction(34, 100)
                                  * Fraction(200-(16+i), 200-16))),
         ])
