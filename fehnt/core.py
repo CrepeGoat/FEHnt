@@ -51,7 +51,7 @@ class OutcomeCalculator:
                     'cannot quit session without summoning at least one Hero'
                 )
             self.callback('left summoning session')
-            self.init_new_session(event, prob*session.prob(self.event_details))
+            self.init_new_session(event, prob)
             return
 
         self.callback('chose to summon', stone_choice.name)
@@ -60,7 +60,13 @@ class OutcomeCalculator:
             alt_session = session._replace(stone_presences=(
                 session.stone_presences.assign[stone_choice](False)
             ))
-            self.states[StateStruct(event, alt_session)] += prob
+            alt_subprob = (
+                alt_session.prob(self.event_details)
+                / session.prob(self.event_details)
+            )
+            self.states[StateStruct(event, alt_session)] += prob * alt_subprob
+
+            prob *= (1-alt_subprob)
 
         new_session = session._replace(
             stone_summons=session.stone_summons.assign[stone_choice](
@@ -152,14 +158,12 @@ class OutcomeCalculator:
 
             if session.stone_summons.sum() == SUMMONS_PER_SESSION:
                 self.callback('completed summoning session')
-                self.init_new_session(
-                    event, prob*session.prob(self.event_details)
-                )
+                self.init_new_session(event, prob)
                 continue
 
             if event.orb_count < stone_cost(session.stone_summons.sum()):
                 self.callback('out of orbs')
-                self.push_outcome(event, prob*session.prob(self.event_details))
+                self.push_outcome(event, prob)
                 continue
 
             stone_choice_sequence = self.summoner.stone_choice_sequence(
