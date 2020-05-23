@@ -6,7 +6,7 @@ from .core import *
 def run():
     """Run calculations."""
     # (based on Heroes of Gallia summoning event)
-    pool_counts = sf.Frame.from_records([
+    pool_counts = make_pool_counts(
         (StarPools._5_STAR_FOCUS, Colors.RED, 1),
         (StarPools._5_STAR_FOCUS, Colors.BLUE, 1),
         (StarPools._5_STAR_FOCUS, Colors.GREEN, 1),
@@ -26,15 +26,11 @@ def run():
         (StarPools._3_STAR, Colors.BLUE, 29),
         (StarPools._3_STAR, Colors.GREEN, 19),
         (StarPools._3_STAR, Colors.GRAY, 28),
-    ], columns=['star', 'color', 'count']).set_index_hierarchy(
-        ('star', 'color'), drop=True
-    )['count']
+    )
 
-    target_pool_counts = sf.Frame.from_records([
+    target_pool_counts = make_pool_counts(
         (StarPools._5_STAR_FOCUS, Colors.RED, 1),
-    ], columns=['star', 'color', 'count']).set_index_hierarchy(
-        ('star', 'color'), drop=True
-    )['count']
+    )
 
     outcome_probs = OutcomeCalculator(
         event_details=StandardEventDetails(pool_counts),

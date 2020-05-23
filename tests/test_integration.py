@@ -8,7 +8,7 @@ from fehnt.core_utils import make_pool_counts
 
 def test_run():
     # (based on Heroes of Gallia summoning event)
-    pool_counts = make_pool_counts([
+    pool_counts = make_pool_counts(
         (StarPools._5_STAR_FOCUS, Colors.RED, 1),
         (StarPools._5_STAR_FOCUS, Colors.BLUE, 1),
         (StarPools._5_STAR_FOCUS, Colors.GREEN, 1),
@@ -28,27 +28,40 @@ def test_run():
         (StarPools._3_STAR, Colors.BLUE, 29),
         (StarPools._3_STAR, Colors.GREEN, 19),
         (StarPools._3_STAR, Colors.GRAY, 28),
-    ])
+    )
 
-    target_pool_counts = make_pool_counts([
+    target_pool_counts = make_pool_counts(
         (StarPools._5_STAR_FOCUS, Colors.RED, 1),
-    ])
+    )
 
-    outcome_probs = dict(condense_results(OutcomeCalculator(
+    outcome_probs = OutcomeCalculator(
         event_details=StandardEventDetails(pool_counts),
         summoner=ColorHuntSummoner(target_pool_counts),
-    )(no_of_orbs=10)))
+    )(no_of_orbs=10)
 
-    assert outcome_probs[make_pool_counts([
+    assert outcome_probs[5, make_pool_counts(
         (StarPools._5_STAR_FOCUS, Colors.RED, 1)
-    ])] == Fraction(
-        138557499491321015377325272287453381641543009,
+    )] == Fraction(53331461890648098721, 2529964800000000000000)
+
+    assert outcome_probs[1, make_pool_counts(
+        (StarPools._5_STAR_FOCUS, Colors.RED, 1)
+    )] == Fraction(1803428037031254581, 158122800000000000000)
+
+    assert outcome_probs[1, make_pool_counts(
+        (StarPools._5_STAR_FOCUS, Colors.RED, 0)
+    )] == Fraction(8492342626380177821929, 19567696500000000000000)
+
+    assert outcome_probs[0, make_pool_counts(
+        (StarPools._5_STAR_FOCUS, Colors.RED, 1)
+    )] == Fraction(
+        35632905572024260525584546495453381641543009,
         3168357335173324800000000000000000000000000000
     )
-    assert outcome_probs[make_pool_counts([
+
+    assert outcome_probs[0, make_pool_counts(
         (StarPools._5_STAR_FOCUS, Colors.RED, 0)
-    ])] == Fraction(
-        3029799835682003784622674727712546618358456991,
+    )] == Fraction(
+        1654738849167994100960528289363746618358456991,
         3168357335173324800000000000000000000000000000
     )
 

@@ -5,7 +5,7 @@ from fehnt.core_utils import *
 from fractions import Fraction
 
 
-@pytest.mark.parametrize(['k_array', 'expt_result'], [
+@pytest.mark.parametrize(['k_values', 'expt_result'], [
     ((0,), 1),
 
     ((0, 1), 1),
@@ -26,8 +26,8 @@ from fractions import Fraction
     ((3, 1), 4),
     ((4, 0), 1),
 ])
-def test_nCkarray(k_array, expt_result):
-    assert nCkarray(k_array) == expt_result
+def test_nCkarray(k_values, expt_result):
+    assert nCkarray(*k_values) == expt_result
 
 
 @pytest.mark.parametrize(['counts', 'prob_ratios', 'expt_result'], [
