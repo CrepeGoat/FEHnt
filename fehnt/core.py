@@ -103,7 +103,7 @@ class OutcomeCalculator:
         for starpool, subprob in choice_starpool_probs.iter_element_items():
             total_prob = prob * subprob
 
-            if starpool in (StarPools.x5_STAR_FOCUS, StarPools.x5_STAR):
+            if starpool.star_rating == StarRatings.x5_STAR:
                 dry_streak = 0
             else:
                 dry_streak = event.dry_streak + 1
