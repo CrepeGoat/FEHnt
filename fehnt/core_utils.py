@@ -1,6 +1,6 @@
 from collections import namedtuple
 
-import static_frame as sf
+from frozendict import FrozenOrderedDict
 
 from fehnt.core_defs import Colors, stone_cost, SUMMONS_PER_SESSION
 
@@ -26,7 +26,6 @@ class SessionState(
                 <= tuple(self.stone_summons.values)
             ).all(axis=1)
         ].sum()
-
 
 
 class StateStruct(namedtuple('_', 'event session')):
@@ -74,18 +73,14 @@ def multinomial_prob(counts, probs):
     return nCkarray(*counts.values) * (probs ** counts).prod()
 
 
-stone_combinations = sf.Frame.from_records([
-    (i, j, k, SUMMONS_PER_SESSION-i-j-k)
+stone_combinations = [
+    FrozenOrderedDict(zip(Colors, (i, j, k, SUMMONS_PER_SESSION-i-j-k)))
     for i in range(SUMMONS_PER_SESSION+1)
     for j in range(SUMMONS_PER_SESSION+1-i)
     for k in range(SUMMONS_PER_SESSION+1-i-j)
-], columns=tuple(Colors))
+]
 
 
-def make_pool_counts(*pools):
+def make_pool_counts(*pools, dict_type=dict):
     """Arrange pool counts into a static frame."""
-    return sf.Frame.from_records(
-        pools, columns=['star', 'color', 'count']
-    ).set_index_hierarchy(
-        ('star', 'color'), drop=True
-    )['count']
+    return dict_type(((star, color), prob) for (star, color, prob) in pools)

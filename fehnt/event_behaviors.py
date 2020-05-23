@@ -2,7 +2,6 @@ from fractions import Fraction
 from functools import lru_cache
 
 import numpy as np
-import static_frame as sf
 
 from fehnt.core_defs import StarPools, StarRatings, Colors, SUMMONS_PER_SESSION
 from fehnt.core_utils import multinomial_prob, stone_combinations
