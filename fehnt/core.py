@@ -1,19 +1,13 @@
 from collections import defaultdict
 from fractions import Fraction
 
-import sortedcontainers as sc
 import static_frame as sf
 
 from .core_defs import *
 from .core_utils import *
+from .containers import *
 from .event_behaviors import *
 from .summoner_behaviors import *
-
-
-class DefaultSortedDict(sc.SortedDict):
-    """A sorted dictionary that pre-populates empty entries with zeros."""
-    def __missing__(self, key):
-        return Fraction()
 
 
 class OutcomeCalculator:

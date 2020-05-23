@@ -11,6 +11,6 @@ setup(
     # Contents
     packages=['fehnt'],
     # Dependencies
-    install_requires=['sortedcontainers', 'numpy'],
+    install_requires=['sortedcontainers', 'numpy', 'frozendict'],
     #tests_requires=['pytest'],
 )
