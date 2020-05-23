@@ -1,6 +1,6 @@
 import numpy as np
 
-from .core_defs import SUMMONS_PER_SESSION
+from .core_defs import Colors
 
 
 class SummonChoiceError(RuntimeError):
@@ -29,14 +29,31 @@ class SummonerBehavior:
         """
         return True
 
-    def choose_stone(self, targets_pulled, stone_counts, unit_probs):
+    def stone_choice_sequence(self, targets_pulled, stones_pulled, unit_probs):
         """
-        Choose an available stone in the given session.
+        Generate characteristic stone color choice sequence.
 
-        Default impementation. Should be overridden.
+        A summoner's choices in a given session state are characterized by an
+        ordered sequence of preferred stone color choices, stone color presence
+        allowing.
+
+        E.g., for the choice sequence [BLUE, GREEN, GRAY]:
+        - if a BLUE stone is present, the summoner will choose a BLUE stone
+          regardless of the other stones available.
+        - if no BLUE stones are present, but a GREEN *is*, the summoner will
+          choose a GREEN stone.
+        - if no BLUE/GREEN stones are present, but a GRAY *is*, the summoner
+          will choose a GRAY stone.
+        - if no BLUE/GREEN/GRAY stones are present (i.e., all are RED), then
+          the summoner will stop the summoning session short.
+
+        ***
+        This assumes that stone preferences are independent of stone presence.
+        E.g., whether or not BLUE is my favorite does *not* depend on whether
+        a GREEN stone is present.
+        ***
         """
-        return next((color for color, count in stone_counts.iter_element_items()
-                     if count), None)
+        return tuple(Colors)
 
 
 class BlindFullSummoner(SummonerBehavior):
@@ -53,12 +70,10 @@ class ColorHuntSummoner(SummonerBehavior):
 
     def should_start_new_session(self, targets_pulled):
         """Check whether a new session should be started."""
-        # TODO make more sophisticated stone-choosing functions
         return self._targets_left(targets_pulled).any()
 
-    def choose_stone(self, targets_pulled, stone_counts, unit_probs):
-        """Choose an available stone in the given session."""
-        # TODO make more sophisticated stone-choosing functions
+    def stone_choice_sequence(self, targets_pulled, stones_pulled, unit_probs):
+        """Generate characteristic stone color choice sequence."""
         targets_left = self.targets - targets_pulled.reindex(
             self.targets.index, fill_value=0
         )
@@ -66,14 +81,15 @@ class ColorHuntSummoner(SummonerBehavior):
                                                          fill_value=0))
                       .iter_group_index(1)
                       .apply(np.sum))
-        available_yield = expt_yield * stone_counts.astype(bool)
-        optimal_choice = available_yield.index[available_yield.values.argmax()]
+        expt_yield = expt_yield.loc[expt_yield.values > 0]
 
-        if available_yield[optimal_choice] == 0:
-            if stone_counts.sum() < SUMMONS_PER_SESSION:
-                return None
-            # TODO choose color w/ lowest chance of resetting dry streak
-            return super().choose_stone(targets_pulled, stone_counts,
-                                        unit_probs)
+        optimal_choice_sequence = tuple(expt_yield.index[np.argsort(
+            expt_yield.values, kind='stable'
+        )[::-1]])
+        if stones_pulled == 0:
+            optimal_choice_sequence = optimal_choice_sequence + tuple(
+                i for i in Colors if i not in optimal_choice_sequence
+            )
+            assert len(optimal_choice_sequence) == len(Colors)
 
-        return optimal_choice
+        return optimal_choice_sequence

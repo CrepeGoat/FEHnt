@@ -33,6 +33,42 @@ class OutcomeCalculator:
         self.states = None
         self.outcomes = None
 
+    def process_stone_choice_sequence(
+        self, event, session, prob, stone_choice_sequence
+    ):
+        """
+        Calculate event states following a single summon characterized by stone
+        choice sequence.
+        """
+        assert session.stone_presences.any()
+
+        for stone_choice in stone_choice_sequence:
+            if session.stone_presences[stone_choice]:
+                break
+        else:
+            if session.stone_summons.sum() == 0:
+                raise SummonChoiceError(
+                    'cannot quit session without summoning at least one Hero'
+                )
+            self.callback('left summoning session')
+            self.init_new_session(event, prob*session.prob(self.event_details))
+            return
+
+        self.callback('chose to summon', stone_choice.name)
+
+        if session.stone_presences.sum() > 1:
+            alt_session = session._replace(stone_presences=(
+                session.stone_presences.assign[stone_choice](False)
+            ))
+            self.states[StateStruct(event, alt_session)] += prob
+
+        new_session = session._replace(
+            stone_summons=session.stone_summons.assign[stone_choice](
+                session.stone_summons[stone_choice] + 1
+            )
+        )
+        self.branch_event(event, new_session, prob, stone_choice)
+
     def init_new_session(self, event, probability):
         """Add new summoning session after an existing session finishes."""
         if not self.summoner.should_start_new_session(event.targets_pulled):
@@ -40,22 +76,15 @@ class OutcomeCalculator:
             self.push_outcome(event, probability)
             return
 
-        prob_tier = event.dry_streak // SUMMONS_PER_SESSION
-        color_probs = self.event_details.colorpool_probs(prob_tier)
-
-        for stones, stones_prob in stone_combinations(color_probs):
-            self.states[StateStruct(
-                event, SessionState(prob_tier, stones)
-            )] += probability * stones_prob
+        self.states[StateStruct(event, SessionState(
+            prob_level=event.dry_streak // SUMMONS_PER_SESSION,
+            stone_summons=sf.Series(0, index=tuple(Colors)),
+            stone_presences=sf.Series(True, index=tuple(Colors)),
+        ))] += probability
 
     def branch_event(self, event, session, prob, stone_choice):
         """Split session into all potential following sub-sessions."""
-        new_session = session._replace(
-            stone_counts=session.stone_counts.assign[stone_choice](
-                session.stone_counts[stone_choice] - 1
-            )
-        )
-        orb_count = event.orb_count - stone_cost(session.stone_counts.sum())
+        orb_count = event.orb_count - stone_cost(session.stone_summons.sum()-1)
 
         choice_starpool_probs = (self.event_details
                                  .pool_probs(session.prob_level)
@@ -93,7 +122,7 @@ class OutcomeCalculator:
             for targets_pulled, subsubprob in pulls:
                 new_event = EventState(orb_count, dry_streak, targets_pulled)
 
-                self.states[StateStruct(new_event, new_session)] += (
+                self.states[StateStruct(new_event, session)] += (
                     total_prob * subsubprob
                 )
 
@@ -121,35 +150,28 @@ class OutcomeCalculator:
             self.callback("  no. of states in queue:", len(self.states))
             self.callback('  orbs left:', event.orb_count)
 
-            if session.stone_counts.sum() == 0:
+            if session.stone_summons.sum() == SUMMONS_PER_SESSION:
                 self.callback('completed summoning session')
-                self.init_new_session(event, prob)
+                self.init_new_session(
+                    event, prob*session.prob(self.event_details)
+                )
                 continue
 
-            if event.orb_count < stone_cost(session.stone_counts.sum()):
+            if event.orb_count < stone_cost(session.stone_summons.sum()):
                 self.callback('out of orbs')
-                self.push_outcome(event, prob)
+                self.push_outcome(event, prob*session.prob(self.event_details))
                 continue
 
-            stone_choice = self.summoner.choose_stone(
+            stone_choice_sequence = self.summoner.stone_choice_sequence(
                 event.targets_pulled,
-                session.stone_counts,
+                session.stone_summons.sum(),
                 unit_probs=self.event_details.pool_probs(
                     probability_tier=session.prob_level
                 ) / self.event_details.pool_counts,
             )
-            if stone_choice is None:
-                if session.stone_counts.sum() == SUMMONS_PER_SESSION:
-                    raise SummonChoiceError('cannot quit session without summoning'
-                                            ' at least one Hero')
-                self.callback('left summoning session')
-                self.init_new_session(event, prob)
-            else:
-                if session.stone_counts[stone_choice] == 0:
-                    raise SummonChoiceError('cannot summon colors that are not'
-                                            ' present')
-                self.callback('chose to summon', stone_choice.name)
-                self.branch_event(event, session, prob, stone_choice)
+            self.process_stone_choice_sequence(
+                event, session, prob, stone_choice_sequence
+            )
 
         return self.outcomes
 
