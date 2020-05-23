@@ -58,28 +58,6 @@ class EventDetailsBase:
             ['probability']
         )
 
-    @lru_cache(maxsize=None)
-    def min_color_count_probs(self, prob_tier):
-        """Generate probabilities for minimum session colors present."""
-        counts_table = self.color_count_probs(prob_tier)
-        min_counts_seq = [
-            (i, j, k, l)
-            for i in range(SUMMONS_PER_SESSION+1)
-            for j in range(SUMMONS_PER_SESSION+1-i)
-            for k in range(SUMMONS_PER_SESSION+1-i-j)
-            for l in range(SUMMONS_PER_SESSION+1-i-j-k)
-        ]
-        min_counts_index = sf.Frame.from_records(
-            min_counts_seq, columns=tuple(Colors)
-        ).set_index_hierarchy(tuple(Colors), drop=False).index
-
-        probs = sf.Series([
-            counts_table[(counts_table.index >= min_counts).all(axis=1)].sum(axis=0)
-            for min_counts in min_counts_index
-        ], index=min_counts_index, name='probability')
-
-        return probs
-
 
 # for standard summoning events
 class StandardEventDetails(EventDetailsBase):
