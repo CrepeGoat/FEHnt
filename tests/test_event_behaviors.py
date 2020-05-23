@@ -34,7 +34,7 @@ def standard_event_details():
         ['count']
     )
 
-    return StandardEventDetails(pool_counts)
+    return EventDetails.make_standard(pool_counts)
 
 
 def test_standard_event_starpool_probs(standard_event_details):

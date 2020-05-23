@@ -4,24 +4,42 @@ from functools import lru_cache
 import numpy as np
 import static_frame as sf
 
-from fehnt.core_defs import StarPools, Colors, SUMMONS_PER_SESSION
+from fehnt.core_defs import StarPools, StarRatings, Colors, SUMMONS_PER_SESSION
 from fehnt.core_utils import multinomial_prob, stone_combinations
 
 
-class EventDetailsBase:
+class EventDetails:
     """Base class for event details classes."""
 
-    def __init__(self, pool_counts, starpool_counts=None):
+    def __init__(self, init_starpool_probs, pool_counts, starpool_counts=None):
         """Construct an instance."""
+        self.init_starpool_probs = init_starpool_probs
         self.pool_counts = pool_counts
         self._starpool_counts = (
             pool_counts.iter_group_index(0).apply(np.sum)
             if starpool_counts is None else starpool_counts
         )
 
+    @lru_cache(maxsize=None)
     def starpool_probs(self, prob_tier):
-        """Generate probabilities for star rating summon pools."""
-        raise NotImplementedError
+        """
+        Generate probabilities for star rating summon pools.
+
+        Calculates by increasing 5-star pools by 0.5% for each tier increase.
+        """
+        index_inc = np.array([
+            idx.star_rating == StarRatings.x5_STAR
+            for idx in self.init_starpool_probs.index
+        ])
+        inc_prob = self.init_starpool_probs[index_inc].sum()
+        new_inc_prob = inc_prob + prob_tier*Fraction(1, 200)
+
+        return sf.Series.from_concat([
+            self.init_starpool_probs[index_inc] * (new_inc_prob / inc_prob),
+            self.init_starpool_probs[~index_inc] * (
+                (1-new_inc_prob) / (1-inc_prob)
+            ),
+        ])
 
     @lru_cache(maxsize=None)
     def pool_probs(self, prob_tier):
@@ -58,36 +76,25 @@ class EventDetailsBase:
             ['probability']
         )
 
-
-# for standard summoning events
-class StandardEventDetails(EventDetailsBase):
-    """A representation of event behaviors in a standard summoning event."""
-
-    @lru_cache(maxsize=None)
-    def starpool_probs(self, prob_tier):
-        """Generate probabilities for star rating summon pools."""
-        i = prob_tier
-        return sf.Series.from_items([
-            (StarPools.x5_STAR_FOCUS, Fraction(12+i, 400)),
-            (StarPools.x5_STAR, Fraction(12+i, 400)),
-            (StarPools.x4_STAR, (Fraction(58, 100)
-                                 * Fraction(200-(12+i), 200-12))),
-            (StarPools.x3_STAR, (Fraction(36, 100)
-                                 * Fraction(200-(12+i), 200-12))),
+    @classmethod
+    def make_standard(cls, pool_counts, starpool_counts=None):
+        """Make event behaviors for a standard summoning event."""
+        init_starpool_probs = sf.Series.from_items([
+            (StarPools.x5_STAR_FOCUS, Fraction(3, 100)),
+            (StarPools.x5_STAR, Fraction(3, 100)),
+            (StarPools.x4_STAR, Fraction(58, 100)),
+            (StarPools.x3_STAR, Fraction(36, 100)),
         ])
 
+        return cls(init_starpool_probs, pool_counts, starpool_counts)
 
-class LegendaryEventDetails(EventDetailsBase):
-    """A representation of event behaviors in a legendary summoning event."""
-
-    @lru_cache(maxsize=None)
-    def starpool_probs(self, prob_tier):
-        """Generate probabilities for star rating summon pools."""
-        i = prob_tier
-        return sf.Series.from_items([
-            (StarPools.x5_STAR_FOCUS, Fraction(16+i, 200)),
-            (StarPools.x4_STAR, (Fraction(58, 100)
-                                 * Fraction(200-(16+i), 200-16))),
-            (StarPools.x3_STAR, (Fraction(34, 100)
-                                 * Fraction(200-(16+i), 200-16))),
+    @classmethod
+    def make_legendary(cls, pool_counts, starpool_counts=None):
+        """Make event behaviors for a standard summoning event."""
+        init_starpool_probs = sf.Series.from_items([
+            (StarPools.x5_STAR_FOCUS, Fraction(8, 100)),
+            (StarPools.x4_STAR, Fraction(58, 100)),
+            (StarPools.x3_STAR, Fraction(34, 100)),
         ])
+
+        return cls(init_starpool_probs, pool_counts, starpool_counts)

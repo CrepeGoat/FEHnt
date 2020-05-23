@@ -33,7 +33,7 @@ def run():
     )
 
     outcome_probs = OutcomeCalculator(
-        event_details=StandardEventDetails(pool_counts),
+        event_details=EventDetails.make_standard(pool_counts),
         summoner=ColorHuntSummoner(target_pool_counts),
     )(no_of_orbs=10)
     for state, prob in condense_results(outcome_probs):
