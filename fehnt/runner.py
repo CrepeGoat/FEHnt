@@ -7,27 +7,27 @@ def run():
     pool_counts = make_pool_counts(
         (StarPools.x5_STAR_FOCUS, Colors.RED, 1),
         (StarPools.x5_STAR_FOCUS, Colors.BLUE, 1),
-        (StarPools.x5_STAR_FOCUS, Colors.GREEN, 1),
         (StarPools.x5_STAR_FOCUS, Colors.GRAY, 1),
 
-        (StarPools.x5_STAR, Colors.RED, 19),
-        (StarPools.x5_STAR, Colors.BLUE, 15),
-        (StarPools.x5_STAR, Colors.GREEN, 15),
-        (StarPools.x5_STAR, Colors.GRAY, 8),
+        (StarPools.x5_STAR, Colors.RED, 57),
+        (StarPools.x5_STAR, Colors.BLUE, 38),
+        (StarPools.x5_STAR, Colors.GREEN, 34),
+        (StarPools.x5_STAR, Colors.GRAY, 26),
 
-        (StarPools.x4_STAR, Colors.RED, 32),
-        (StarPools.x4_STAR, Colors.BLUE, 30),
-        (StarPools.x4_STAR, Colors.GREEN, 20),
-        (StarPools.x4_STAR, Colors.GRAY, 28),
+        (StarPools.x4_STAR, Colors.RED, 33),
+        (StarPools.x4_STAR, Colors.BLUE, 34),
+        (StarPools.x4_STAR, Colors.GREEN, 24),
+        (StarPools.x4_STAR, Colors.GRAY, 35),
 
-        (StarPools.x3_STAR, Colors.RED, 32),
-        (StarPools.x3_STAR, Colors.BLUE, 29),
-        (StarPools.x3_STAR, Colors.GREEN, 19),
-        (StarPools.x3_STAR, Colors.GRAY, 28),
+        (StarPools.x3_STAR, Colors.RED, 33),
+        (StarPools.x3_STAR, Colors.BLUE, 33),
+        (StarPools.x3_STAR, Colors.GREEN, 24),
+        (StarPools.x3_STAR, Colors.GRAY, 35),
     )
 
     target_pool_counts = make_pool_counts(
         (StarPools.x5_STAR_FOCUS, Colors.RED, 1),
+        (StarPools.x5_STAR_FOCUS, Colors.GRAY, 1),
     )
 
     outcomes = OutcomeCalculator(
@@ -37,7 +37,7 @@ def run():
     )
     for orbs_spent, outcome_probs in outcomes:
         print(f'orbs: {orbs_spent}')
-        if orbs_spent == 10:
+        if orbs_spent == 83:
             break
     for state, prob in condense_results(outcome_probs):
         print("{}: {:%}".format(state, float(prob)))
