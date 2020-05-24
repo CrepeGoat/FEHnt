@@ -21,26 +21,34 @@ class Colors(enum.Enum):
 class StarRatings(enum.IntEnum):
     """Unit star ratings."""
 
-    _5_STAR = 5
-    _4_STAR = 4
-    _3_STAR = 3
+    x5_STAR = 5
+    x4_STAR = 4
+    x3_STAR = 3
 
 
 @enum.unique
 class StarPools(enum.Enum):
     """Unit star rating summon pools."""
 
-    _5_STAR_FOCUS = 5.5
-    _5_STAR = 5
-    _4_STAR_FOCUS = 4.5
-    _4_STAR = 4
-    _3_STAR = 3
+    x5_STAR_FOCUS = (5, True)
+    x5_STAR = (5, False)
+    x4_STAR_FOCUS = (4, True)
+    x4_STAR = (4, False)
+    x3_STAR = (3, False)
 
     def __lt__(self, other):
         """Order star pool objects."""
         if not isinstance(other, self.__class__):
             return NotImplemented
         return self.value < other.value
+
+    @property
+    def star_rating(self):
+        return StarRatings(self.value[0])
+
+    @property
+    def is_focus(self):
+        return self.value[1]
 
 
 _STONE_COSTS = (5, 4, 4, 4, 3)

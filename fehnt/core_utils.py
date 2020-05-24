@@ -9,14 +9,14 @@ EventState = namedtuple('EventState', 'orb_count dry_streak targets_pulled')
 
 
 class SessionState(
-    namedtuple('_', 'prob_level stone_summons stone_presences')
+    namedtuple('_', 'prob_tier stone_summons stone_presences')
 ):
     def prob(self, event_details):
         """
         Calculate the probability of a session with the given stone
         limitations.
         """
-        color_count_probs = event_details.color_count_probs(self.prob_level)
+        color_count_probs = event_details.color_count_probs(self.prob_tier)
         return color_count_probs.loc[
             (
                 color_count_probs.index >= tuple(self.stone_summons.values)
