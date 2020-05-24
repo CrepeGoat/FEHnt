@@ -179,7 +179,7 @@ class OutcomeCalculator:
                 event.orbs_spent + stone_cost(session.stone_summons.sum())
                 > last_outcome
             ):
-                yield (last_outcome, self.outcomes)
+                yield (last_outcome, dict(self.outcomes))
                 last_outcome = (
                     event.orbs_spent + stone_cost(session.stone_summons.sum())
                 )
