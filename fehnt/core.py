@@ -177,7 +177,10 @@ class OutcomeCalculator:
                 event.orbs_spent + stone_cost(session.stone_summons.sum())
                 > self.outcomes.peekitem(-1)[0].orbs_spent
             ):
-                yield (self.outcomes.peekitem(-1)[0].orbs_spent, self.outcomes)
+                yield (
+                    self.outcomes.peekitem(-1)[0].orbs_spent,
+                    dict(self.outcomes)
+                )
 
             # Needs to pull *after* yielding outcomes
             self.pull_outcome(event, prob)
