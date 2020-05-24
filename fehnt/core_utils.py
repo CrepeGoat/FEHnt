@@ -5,7 +5,7 @@ import static_frame as sf
 from fehnt.core_defs import Colors, stone_cost, SUMMONS_PER_SESSION
 
 
-EventState = namedtuple('EventState', 'orb_count dry_streak targets_pulled')
+EventState = namedtuple('EventState', 'orbs_spent dry_streak targets_pulled')
 
 
 class SessionState(
@@ -28,7 +28,6 @@ class SessionState(
         ].sum()
 
 
-
 class StateStruct(namedtuple('_', 'event session')):
     """
     Represents a unique state in summoning.
@@ -49,7 +48,7 @@ class StateStruct(namedtuple('_', 'event session')):
             next_stone_cost = stone_cost(self.session.stone_summons.sum())
 
         return (
-            self.event.orb_count - next_stone_cost,
+            -(self.event.orbs_spent + next_stone_cost),
             self.session.stone_presences.sum(),
         )
 
@@ -58,7 +57,7 @@ class StateStruct(namedtuple('_', 'event session')):
         return self._obj_func() < other._obj_func()
 
 
-ResultState = namedtuple('ResultState', 'orb_count targets_pulled')
+ResultState = namedtuple('ResultState', 'orbs_spent targets_pulled')
 
 
 def nCkarray(*k_values):

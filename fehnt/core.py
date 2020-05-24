@@ -64,7 +64,7 @@ class OutcomeCalculator:
                 alt_session.prob(self.event_details)
                 / session.prob(self.event_details)
             )
-            self.states[StateStruct(event, alt_session)] += prob * alt_subprob
+            self.push_state(event, alt_session, prob * alt_subprob)
 
             prob *= (1-alt_subprob)
 
@@ -82,15 +82,15 @@ class OutcomeCalculator:
             self.push_outcome(event, prob)
             return
 
-        self.states[StateStruct(event, SessionState(
+        self.push_state(event, SessionState(
             prob_tier=event.dry_streak // SUMMONS_PER_SESSION,
             stone_summons=sf.Series(0, index=tuple(Colors)),
             stone_presences=sf.Series(True, index=tuple(Colors)),
-        ))] += prob
+        ), prob)
 
     def branch_event(self, event, session, prob, stone_choice):
         """Split session into all potential following sub-sessions."""
-        orb_count = event.orb_count - stone_cost(session.stone_summons.sum()-1)
+        orbs_spent = event.orbs_spent + stone_cost(session.stone_summons.sum()-1)
 
         choice_starpool_probs = (self.event_details
                                  .pool_probs(session.prob_tier)
@@ -126,24 +126,34 @@ class OutcomeCalculator:
                          (event.targets_pulled, 1-prob_success))
 
             for targets_pulled, subsubprob in pulls:
-                new_event = EventState(orb_count, dry_streak, targets_pulled)
+                new_event = EventState(orbs_spent, dry_streak, targets_pulled)
+                new_prob = total_prob * subsubprob
 
-                self.states[StateStruct(new_event, session)] += (
-                    total_prob * subsubprob
-                )
+                self.push_state(new_event, session, new_prob)
+
+    def push_state(self, event, session, prob):
+        self.states[StateStruct(event, session)] += prob
+        self.push_outcome(event, prob)
+
+    def pull_outcome(self, event, prob):
+        """Remove a given probabilistic outcome to the recorded results."""
+        result = ResultState(event.orbs_spent, event.targets_pulled)
+        self.outcomes[result] -= prob
+        if self.outcomes[result] == Fraction:
+            del self.outcomes[result]
 
     def push_outcome(self, event, prob):
         """Add a given probabilistic outcome to the recorded results."""
-        result = ResultState(event.orb_count, event.targets_pulled)
+        result = ResultState(event.orbs_spent, event.targets_pulled)
         self.outcomes[result] += prob
 
-    def __call__(self, no_of_orbs):
-        """Calculate the summoning probabilities."""
+    def __iter__(self):
+        """Iterate the summoning probabilities at every orb milestone."""
         self.states = DefaultSortedDict()
-        self.outcomes = defaultdict(Fraction, [])
+        self.outcomes = DefaultSortedDict()
 
         self.init_new_session(
-            EventState(no_of_orbs, 0, 0*self.summoner.targets), Fraction(1)
+            EventState(0, 0, 0*self.summoner.targets), Fraction(1)
         )
 
         def iter_states():
@@ -154,17 +164,23 @@ class OutcomeCalculator:
         for i, ((event, session), prob) in enumerate(iter_states()):
             self.callback("  state no.:", i)
             self.callback("  no. of states in queue:", len(self.states))
-            self.callback('  orbs left:', event.orb_count)
+            self.callback("  no. of outcomes:", len(self.outcomes))
+            self.callback('  orbs spent:', event.orbs_spent)
 
             if session.stone_summons.sum() == SUMMONS_PER_SESSION:
                 self.callback('completed summoning session')
+                self.pull_outcome(event, prob)
                 self.init_new_session(event, prob)
                 continue
 
-            if event.orb_count < stone_cost(session.stone_summons.sum()):
-                self.callback('out of orbs')
-                self.push_outcome(event, prob)
-                continue
+            if self.outcomes and (
+                event.orbs_spent + stone_cost(session.stone_summons.sum())
+                > self.outcomes.peekitem(-1)[0].orbs_spent
+            ):
+                yield (self.outcomes.peekitem(-1)[0].orbs_spent, self.outcomes)
+
+            # Needs to pull *after* yielding outcomes
+            self.pull_outcome(event, prob)
 
             stone_choice_sequence = self.summoner.stone_choice_sequence(
                 event.targets_pulled,
@@ -177,7 +193,7 @@ class OutcomeCalculator:
                 event, session, prob, stone_choice_sequence
             )
 
-        return self.outcomes
+            assert sum(self.outcomes.values()) == 1
 
 
 def condense_results(results):
