@@ -150,7 +150,8 @@ class OutcomeCalculator:
     def __iter__(self):
         """Iterate the summoning probabilities at every orb milestone."""
         self.states = DefaultSortedDict()
-        self.outcomes = DefaultSortedDict()
+        self.outcomes = defaultdict(Fraction, [])
+        last_outcome = 0
 
         self.init_new_session(
             EventState(0, 0, 0*self.summoner.targets), Fraction(1)
@@ -176,9 +177,12 @@ class OutcomeCalculator:
             assert self.outcomes
             if (
                 event.orbs_spent + stone_cost(session.stone_summons.sum())
-                > self.outcomes.peekitem(-1)[0].orbs_spent
+                > last_outcome
             ):
-                yield (self.outcomes.peekitem(-1)[0].orbs_spent, self.outcomes)
+                yield (last_outcome, self.outcomes)
+                last_outcome = (
+                    event.orbs_spent + stone_cost(session.stone_summons.sum())
+                )
 
             # Needs to pull *after* yielding outcomes
             self.pull_outcome(event, prob)
