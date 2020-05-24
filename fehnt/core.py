@@ -90,7 +90,7 @@ class OutcomeCalculator:
 
     def branch_event(self, event, session, prob, stone_choice):
         """Split session into all potential following sub-sessions."""
-        orb_count = event.orb_count - stone_cost(session.stone_summons.sum()-1)
+        orbs_spent = event.orbs_spent + stone_cost(session.stone_summons.sum()-1)
 
         choice_starpool_probs = (self.event_details
                                  .pool_probs(session.prob_tier)
@@ -126,7 +126,7 @@ class OutcomeCalculator:
                          (event.targets_pulled, 1-prob_success))
 
             for targets_pulled, subsubprob in pulls:
-                new_event = EventState(orb_count, dry_streak, targets_pulled)
+                new_event = EventState(orbs_spent, dry_streak, targets_pulled)
 
                 self.states[StateStruct(new_event, session)] += (
                     total_prob * subsubprob
@@ -134,7 +134,7 @@ class OutcomeCalculator:
 
     def push_outcome(self, event, prob):
         """Add a given probabilistic outcome to the recorded results."""
-        result = ResultState(event.orb_count, event.targets_pulled)
+        result = ResultState(event.orbs_spent, event.targets_pulled)
         self.outcomes[result] += prob
 
     def __call__(self, no_of_orbs):
@@ -143,7 +143,7 @@ class OutcomeCalculator:
         self.outcomes = defaultdict(Fraction, [])
 
         self.init_new_session(
-            EventState(no_of_orbs, 0, 0*self.summoner.targets), Fraction(1)
+            EventState(0, 0, 0*self.summoner.targets), Fraction(1)
         )
 
         def iter_states():
@@ -154,14 +154,17 @@ class OutcomeCalculator:
         for i, ((event, session), prob) in enumerate(iter_states()):
             self.callback("  state no.:", i)
             self.callback("  no. of states in queue:", len(self.states))
-            self.callback('  orbs left:', event.orb_count)
+            self.callback('  orbs spent:', event.orbs_spent)
 
             if session.stone_summons.sum() == SUMMONS_PER_SESSION:
                 self.callback('completed summoning session')
                 self.init_new_session(event, prob)
                 continue
 
-            if event.orb_count < stone_cost(session.stone_summons.sum()):
+            if (
+                event.orbs_spent + stone_cost(session.stone_summons.sum())
+                > no_of_orbs
+            ):
                 self.callback('out of orbs')
                 self.push_outcome(event, prob)
                 continue
