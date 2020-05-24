@@ -52,20 +52,19 @@ def survey(outcomes_iter, max_orbs=100):
 
     print('time to make the plot')
     fig, ax = plt.subplots(figsize=(9.2, 5))
-    ax.invert_yaxis()
-    ax.xaxis.set_visible(False)
-    ax.set_xlim(0, np.sum(data, axis=1).max())
+    ax.yaxis.set_visible(False)
+    ax.set_ylim(0, 1)
 
     for i, color in enumerate(category_colors):
-        widths = data[:, i]
-        starts = data_cum[:, i] - widths
-        ax.barh(labels, widths, left=starts, height=0.5,
-                label=str(i), color=color)
-        xcenters = starts + widths / 2
+        heights = data[:, i]
+        starts = data_cum[:, i] - heights
+        ax.bar(labels, heights, bottom=starts, width=0.5,
+               label=str(i), color=color)
+        ycenters = starts + heights / 2
 
         r, g, b, _ = color
         text_color = 'white' if r * g * b < 0.5 else 'darkgrey'
-        for y, (x, c) in enumerate(zip(xcenters, widths)):
+        for y, (x, c) in enumerate(zip(ycenters, heights)):
             ax.text(x, y, str(int(c)), ha='center', va='center',
                     color=text_color)
     ax.legend(ncol=bin_count, bbox_to_anchor=(0, 1),
