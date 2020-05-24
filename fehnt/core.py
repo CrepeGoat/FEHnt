@@ -173,7 +173,8 @@ class OutcomeCalculator:
                 self.init_new_session(event, prob)
                 continue
 
-            if self.outcomes and (
+            assert self.outcomes
+            if (
                 event.orbs_spent + stone_cost(session.stone_summons.sum())
                 > self.outcomes.peekitem(-1)[0].orbs_spent
             ):
