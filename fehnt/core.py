@@ -151,11 +151,12 @@ class OutcomeCalculator:
         """Iterate the summoning probabilities at every orb milestone."""
         self.states = DefaultSortedDict()
         self.outcomes = defaultdict(Fraction, [])
-        last_outcome = 0
 
         self.init_new_session(
             EventState(0, 0, 0*self.summoner.targets), Fraction(1)
         )
+
+        last_orb_limit = next(iter(self.outcomes)).orbs_spent
 
         def iter_states():
             """Iterate state nodes."""
@@ -177,10 +178,10 @@ class OutcomeCalculator:
             assert self.outcomes
             if (
                 event.orbs_spent + stone_cost(session.stone_summons.sum())
-                > last_outcome
+                > last_orb_limit
             ):
-                yield (last_outcome, dict(self.outcomes))
-                last_outcome = (
+                yield (last_orb_limit, dict(self.outcomes))
+                last_orb_limit = (
                     event.orbs_spent + stone_cost(session.stone_summons.sum())
                 )
 
