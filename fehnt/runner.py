@@ -33,8 +33,10 @@ def run():
     outcomes = OutcomeCalculator(
         event_details=EventDetails.make_standard(pool_counts),
         summoner=ColorHuntSummoner(target_pool_counts),
+        callback=lambda *args: None,
     )
     for orbs_spent, outcome_probs in outcomes:
+        print(f'orbs: {orbs_spent}')
         if orbs_spent == 10:
             break
     for state, prob in condense_results(outcome_probs):
