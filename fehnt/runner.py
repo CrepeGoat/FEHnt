@@ -1,5 +1,3 @@
-import static_frame as sf
-
 from .core import *
 
 
