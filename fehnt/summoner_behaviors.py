@@ -75,10 +75,11 @@ class ColorHuntSummoner(SummonerBehavior):
     def stone_choice_sequence(self, targets_pulled, stones_pulled, unit_probs):
         """Generate characteristic stone color choice sequence."""
         targets_left = self._targets_left(targets_pulled)
-        expt_yield = ((unit_probs * targets_left.reindex(unit_probs.index,
-                                                         fill_value=0))
-                      .iter_group_index(1)
-                      .apply(np.sum))
+        expt_yield = (
+            (unit_probs[targets_left.index] * targets_left)
+            .iter_group_index(1)
+            .apply(np.sum)
+        )
         expt_yield = expt_yield.loc[expt_yield.values > 0]
 
         optimal_choice_sequence = tuple(expt_yield.index[np.argsort(
