@@ -17,7 +17,7 @@ class SessionState(
         limitations.
         """
         color_count_probs = event_details.color_count_probs(self.prob_tier)
-        return color_count_probs.loc[
+        index = (
             (
                 color_count_probs.index >= tuple(self.stone_summons.values)
             ).all(axis=1)
@@ -25,7 +25,15 @@ class SessionState(
                 color_count_probs.index * tuple(1 - self.stone_presences.values)
                 <= tuple(self.stone_summons.values)
             ).all(axis=1)
-        ].sum()
+        )
+        index_sum = index.sum()
+
+        if index_sum == len(index):  # Series.loc[[False]*N].sum() breaks
+            return 1
+        if index_sum > len(index) // 2:
+            return 1 - color_count_probs.loc[~index].sum()
+
+        return color_count_probs.loc[index].sum()
 
 
 class StateStruct(namedtuple('_', 'event session')):
