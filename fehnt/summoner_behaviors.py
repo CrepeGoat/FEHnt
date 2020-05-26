@@ -85,7 +85,7 @@ class ColorHuntSummoner(SummonerBehavior):
             expt_yield.values, kind='stable'
         )[::-1]])
         if stones_pulled == 0:
-            optimal_choice_sequence = optimal_choice_sequence + tuple(
+            optimal_choice_sequence += tuple(
                 i for i in Colors if i not in optimal_choice_sequence
             )
             assert len(optimal_choice_sequence) == len(Colors)
