@@ -92,13 +92,9 @@ class OutcomeCalculator:
         """Split session into all potential following sub-sessions."""
         orbs_spent = event.orbs_spent + stone_cost(session.stone_summons.sum()-1)
 
-        choice_starpool_probs = (self.event_details
-                                 .pool_probs(session.prob_tier)
-                                 [sf.HLoc[:, stone_choice]]
-                                 .reindex_drop_level(-1))
-
-        choice_starpool_probs = (choice_starpool_probs
-                                 / choice_starpool_probs.sum())
+        choice_starpool_probs = self.event_details.colorfix_starpool_probs(
+            session.prob_tier, stone_choice
+        )
 
         for starpool, subprob in choice_starpool_probs.iter_element_items():
             total_prob = prob * subprob

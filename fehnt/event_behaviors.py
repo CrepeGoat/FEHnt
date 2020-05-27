@@ -53,6 +53,15 @@ class EventDetails:
         ) * self.pool_counts
 
     @lru_cache(maxsize=None)
+    def colorfix_starpool_probs(self, prob_tier, color):
+        """Generate probabilities for star summon pools in a given color."""
+        sub_probs = (
+            self.pool_probs(prob_tier)[sf.HLoc[:, color]]
+            .reindex_drop_level(-1)
+        )
+        return sub_probs / sub_probs.sum()
+
+    @lru_cache(maxsize=None)
     def colorpool_probs(self, prob_tier):
         """Generate probabilities for color summon pools."""
         return (self.pool_probs(prob_tier)
